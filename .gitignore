@@ -1,0 +1,45 @@
+# Build dirs
+/build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+.vscode/
+
+# Binários
+*.dll
+*.so
+*.dylib
+*.exe
+*.lib
+*.pdb
+
+# Arquivos temporários
+*.tmp
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+
+# C# / Unity
+bin/
+obj/
+*.csproj.user
+*.suo
+*.user
+*.unityproj
+*.pidb
+*.booproj
+*.svd
+*.db
+*.opendb
+Library/
+Temp/
+Logs/
+UserSettings/
