@@ -1,35 +1,35 @@
 #include "api.h"
-#include "tensor.h"
+#include "nn/layers/dense_layer.h"
+#include <cstring>
 
-Tensor* tensor_create(const size_t* shape, size_t dim) {
-  std::vector<size_t> vec_shape(shape, shape + dim);
-  return new Tensor(vec_shape);
+DenseLayer* dense_layer_create(size_t in_features, size_t out_features) {
+  return new DenseLayer(in_features, out_features);
 }
 
-void tensor_free(Tensor* tensor) {
-  delete tensor;
+void dense_layer_free(DenseLayer* layer) {
+  delete layer;
 }
 
-float* tensor_data(Tensor* tensor) {
-  return tensor->data();
+Tensor* dense_layer_forward(DenseLayer* layer, const Tensor* input) {
+  return new Tensor(layer->forward(*input));
 }
 
-const float* tensor_data_const(const Tensor* tensor) {
-  return tensor->data();
+Tensor* dense_layer_backward(DenseLayer* layer, const Tensor* grad_output) {
+  return new Tensor(layer->backward(*grad_output));
 }
 
-const size_t* tensor_shape(const Tensor* tensor) {
-  return tensor->shape().data();
+void dense_layer_update(DenseLayer* layer, float learning_rate) {
+  layer->update(learning_rate);
 }
 
-Tensor* tensor_add(const Tensor* a, const Tensor* b) {
-  return new Tensor(Tensor::add(*a, *b));
+const char* dense_info(DenseLayer* layer) {
+  static thread_local std::string buffer;
+  buffer = layer->info();
+  return buffer.c_str(); 
 }
 
-Tensor* tensor_mul_scalar(const Tensor* a, float scalar) {
-  return new Tensor(Tensor::mul_scalar(*a, scalar));
-}
-
-Tensor* tensor_matmul(const Tensor* a, const Tensor* b) {
-  return new Tensor(Tensor::matmul(*a, *b));
+const char* dense_detailed_info(DenseLayer* layer) {
+  static thread_local std::string buffer;
+  buffer = layer->detailed_info();
+  return buffer.c_str();
 }

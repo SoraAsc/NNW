@@ -24,6 +24,10 @@ const std::vector<size_t>& Tensor::shape() const {
   return m_shape;
 }
 
+const size_t Tensor::numel() const {
+  return m_data.size();
+}
+
 Tensor Tensor::add(const Tensor& a, const Tensor& b) {
   if (a.m_shape != b.m_shape) throw std::invalid_argument("Shapes do not match for addition");
   
@@ -32,6 +36,16 @@ Tensor Tensor::add(const Tensor& a, const Tensor& b) {
   
   for (size_t i = 0; i < total_size; ++i)
     result.m_data[i] = a.m_data[i] + b.m_data[i];
+  
+  return result;
+}
+
+Tensor Tensor::add_scalar(const Tensor& a, float scalar) {
+  Tensor result(a.m_shape);
+  size_t total_size = a.m_data.size();
+  
+  for (size_t i = 0; i < total_size; ++i)
+    result.m_data[i] = a.m_data[i] + scalar;
   
   return result;
 }
@@ -66,5 +80,18 @@ Tensor Tensor::matmul(const Tensor& a, const Tensor& b) {
     }
   }
   
+  return result;
+}
+
+Tensor Tensor::transpose(const Tensor& a) {
+  if (a.m_shape.size() != 2) throw std::invalid_argument("Tensor must be 2D for transpose");
+  
+  std::vector<size_t> result_shape = {a.m_shape[1], a.m_shape[0]};
+  Tensor result(result_shape);
+  
+  for (size_t i = 0; i < a.m_shape[0]; ++i) {
+    for (size_t j = 0; j < a.m_shape[1]; ++j)
+      result.m_data[j * result_shape[1] + i] = a.m_data[i * a.m_shape[1] + j];
+  }
   return result;
 }

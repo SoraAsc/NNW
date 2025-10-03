@@ -1,43 +1,39 @@
 import ctypes
 import os
+import math
 
 lib_path = os.path.join(os.path.dirname(__file__), '../../build/neural_wrapper.so')
 lib = ctypes.CDLL(lib_path)
 
-lib.tensor_create.argtypes = [ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t]
-lib.tensor_create.restype = ctypes.c_void_p
+# class DenseLayer(ctypes.Structure):
+    # _fields_ = [("weights", ctypes.c_void_p), ("biases", ctypes.c_void_p)]
 
-lib.tensor_free.argtypes = [ctypes.c_void_p]
-lib.tensor_free.restype = None
+lib.dense_layer_create.argtypes = [ctypes.c_size_t, ctypes.c_size_t]
+lib.dense_layer_create.restype = ctypes.c_void_p
+# lib.dense_layer_create.restype = ctypes.POINTER(DenseLayer)
 
-lib.tensor_data.argtypes = [ctypes.c_void_p]
-lib.tensor_data.restype = ctypes.POINTER(ctypes.c_float)
+lib.dense_layer_free.argtypes = [ctypes.c_void_p]
+lib.dense_layer_free.restype = None
 
-lib.tensor_shape.argtypes = [ctypes.c_void_p]
-lib.tensor_shape.restype = ctypes.POINTER(ctypes.c_size_t)
+lib.dense_info.argtypes = [ctypes.c_void_p]
+lib.dense_info.restype = ctypes.c_char_p
 
-def create_tensor(shape):
-    shape_array = (ctypes.c_size_t * len(shape))(*shape)
-    tensor_ptr = lib.tensor_create(shape_array, len(shape))
-    return tensor_ptr
+lib.dense_detailed_info.argtypes = [ctypes.c_void_p]
+lib.dense_detailed_info.restype = ctypes.c_char_p
 
-def free_tensor(tensor_ptr):
-    lib.tensor_free(tensor_ptr)
+def create_dense_layer(in_features, out_features):
+    dense_layer = lib.dense_layer_create(in_features, out_features)
+    return dense_layer
 
-def get_tensor_data(tensor_ptr, size):
-    data_ptr = lib.tensor_data(tensor_ptr)
-    data_ptr[3] = 42.0  # Example modification
-    return [data_ptr[i] for i in range(size)]
+def free_dense_layer(layer):
+    lib.dense_layer_free(layer)
 
 # Example usage
 if __name__ == "__main__":
-    shape = (2, 3)
-    tensor = create_tensor(shape)
-    data = get_tensor_data(tensor, 6)
-    print("Tensor data:", data)
+    layer = create_dense_layer(10, 15)
+    print("Layer info:", lib.dense_info(layer))
 
-    shape_ptr = lib.tensor_shape(tensor)
-    shape = [shape_ptr[i] for i in range(2)]  # Assuming 2D tensor
-    print("Tensor shape:", shape)
+    detailed_info = lib.dense_detailed_info(layer)
+    print("Detailed Layer info:", detailed_info.decode('utf-8'))
 
-    free_tensor(tensor)
+    free_dense_layer(layer)

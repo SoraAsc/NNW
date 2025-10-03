@@ -7,6 +7,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_library(neural_wrapper SHARED
     src/tensor.cpp
+    src/nn/layers/dense_layer.cpp
     src/api.cpp
 )
 
