@@ -28,6 +28,46 @@ const size_t Tensor::numel() const {
   return m_data.size();
 }
 
+// Helper functions for common tensor operations
+
+Tensor Tensor::add_rowwise(const Tensor& a, const Tensor& rowVec) {
+  if (a.m_shape.size() != 2 || rowVec.m_shape.size() != 1)
+    throw std::invalid_argument("Input tensor must be 2D and row vector must be 1D");
+  
+  if (a.m_shape[1] != rowVec.m_shape[0])
+    throw std::invalid_argument("Row vector size must match number of columns in matrix");
+  
+  Tensor result(a.m_shape);
+  size_t rows = a.m_shape[0];
+  size_t cols = a.m_shape[1];
+  
+  for (size_t i = 0; i < rows; ++i) {
+    for (size_t j = 0; j < cols; ++j)
+      result.m_data[i * cols + j] = a.m_data[i * cols + j] + rowVec.m_data[j];
+  }
+  
+  return result;
+}
+
+Tensor Tensor::reduce_sum_rows(const Tensor& a) {
+  if (a.m_shape.size() != 2)
+    throw std::invalid_argument("Input tensor must be 2D for row-wise sum");
+  
+  size_t rows = a.m_shape[0];
+  size_t cols = a.m_shape[1];
+  
+  Tensor result({cols}); // Result is 1D with size equal to number of columns
+  for (size_t j = 0; j < cols; ++j) {
+    float sum = 0.0f;
+    for (size_t i = 0; i < rows; ++i) sum += a.m_data[i * cols + j];
+    result.m_data[j] = sum;
+  }
+  
+  return result;
+}
+
+// Basic Operations
+
 Tensor Tensor::add(const Tensor& a, const Tensor& b) {
   if (a.m_shape != b.m_shape) throw std::invalid_argument("Shapes do not match for addition");
   
@@ -36,16 +76,6 @@ Tensor Tensor::add(const Tensor& a, const Tensor& b) {
   
   for (size_t i = 0; i < total_size; ++i)
     result.m_data[i] = a.m_data[i] + b.m_data[i];
-  
-  return result;
-}
-
-Tensor Tensor::add_scalar(const Tensor& a, float scalar) {
-  Tensor result(a.m_shape);
-  size_t total_size = a.m_data.size();
-  
-  for (size_t i = 0; i < total_size; ++i)
-    result.m_data[i] = a.m_data[i] + scalar;
   
   return result;
 }

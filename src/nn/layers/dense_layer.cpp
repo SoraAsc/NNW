@@ -4,27 +4,34 @@
 #include <iomanip>
 
 DenseLayer::DenseLayer(const size_t in_features, const size_t out_features) {
-  weights = Tensor({out_features, in_features});
-  biases = Tensor({out_features});
-  std::mt19937 gen(std::random_device{}()); // 4
+  weights = Tensor({out_features, in_features}); // W: [out, in]
+  biases = Tensor({out_features}); // b: [out]
+  std::mt19937 gen(std::random_device{}());
   std::uniform_real_distribution<float> dis(-0.1, 0.1);
   for(size_t i = 0; i < weights.numel(); i++) weights.data()[i] = dis(gen);
-  for(size_t i = 0; i < biases.numel(); i++) biases.data()[i] = 0.0f; //dis(gen);
+  for(size_t i = 0; i < biases.numel(); i++) biases.data()[i] = 0.0f;
 };
 
 DenseLayer::~DenseLayer() {} // Tensors are automatically cleaned up by their destructors
 
 Tensor DenseLayer::forward(const Tensor& input) {
+  // X: [batch, in]
   input_cache = input; // Cache input for backward pass
-  Tensor output = Tensor::matmul(weights, Tensor::transpose(input)); // [out_features, batch_size]
-  output = Tensor::add(output, biases); // Broadcasting biases
+  // X @ W^T -> [batch, in] @ [in, out] = [batch, out]
+  Tensor output = Tensor::matmul(input_cache, Tensor::transpose(weights));
+  // + b (row-wise)
+  output = Tensor::add_rowwise(output, biases);
   return output;
 };
 
 Tensor DenseLayer::backward(const Tensor& grad_output) {
-  grad_weights = Tensor::matmul(grad_output, Tensor::transpose(input_cache)); // [out_features, in_features]
-  grad_biases = Tensor::add_scalar(grad_output, 1);
-  Tensor grad_input = Tensor::matmul(Tensor::transpose(weights), grad_output); // [in_features, batch_size]
+  // grad_output: [batch, out]
+  // dW = grad_output^T @ X -> [out, batch] @ [batch, in] = [out, in]
+  grad_weights = Tensor::matmul(Tensor::transpose(grad_output), input_cache); // [out_features, in_features]
+  // db = sum over rows of batch/grad_output -> [out]
+  grad_biases = Tensor::reduce_sum_rows(grad_output); // [out_features]
+  // dX = grad_output @ W -> [batch, out] @ [out, in] = [batch, in]
+  Tensor grad_input = Tensor::matmul(grad_output, weights); // [batch_size, in_features]
   return grad_input;
 };
 

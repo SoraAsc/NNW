@@ -14,15 +14,15 @@ public:
   const std::vector<size_t>& shape() const;
   const size_t numel() const;
 
+  // Helper functions for common tensor operations
+  static Tensor add_rowwise(const Tensor& a, const Tensor& rowVec); // Add row vector to each row of matrix a
+  static Tensor reduce_sum_rows(const Tensor& a); // Sum over rows, result is 1D
   // Basic Operations
   static Tensor add(const Tensor& a, const Tensor& b);
-  static Tensor add_scalar(const Tensor& a, float scalar);
   static Tensor mul_scalar(const Tensor& a, float scalar);
   static Tensor matmul(const Tensor& a, const Tensor& b);
-  // static Tensor relu(const Tensor& a);
-  // static Tensor sigmoid(const Tensor& a);
-  // static Tensor softmax(const Tensor& a);
   static Tensor transpose(const Tensor& a);
+
 private:
   std::vector<size_t> m_shape;
   std::vector<float> m_data;
