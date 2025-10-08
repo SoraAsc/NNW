@@ -8,6 +8,7 @@ public:
   Tensor forward(const Tensor& input) override; // X: [batch_size, in_features] or [in_features] (1D)
   Tensor backward(const Tensor& grad_output) override; // compute gradients and return grad_input
   void update(float learning_rate) override; // apply update to weights and biases
+  void zero_grad() override; // clear stored gradients
   std::string info() override;
   std::string detailed_info() override;
   ~DenseLayer();

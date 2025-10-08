@@ -59,6 +59,11 @@ void DenseLayer::update(float learning_rate) {
   biases = Tensor::add(biases, Tensor::mul_scalar(grad_biases, -learning_rate));
 };
 
+void DenseLayer::zero_grad() {
+  grad_weights.zero();
+  grad_biases.zero();
+}
+
 std::string DenseLayer::info() {
   std::ostringstream oss;
   oss << "Dense Layer: ";
