@@ -3,11 +3,12 @@
 
 Tensor::Tensor(const std::vector<size_t>& shape): m_shape(shape) {
   if(shape.empty()) throw std::invalid_argument("Shape cannot be empty");
-  
-  size_t total_size = 1;
-  for (size_t dim : shape) total_size *= dim;
-  
-  m_data.resize(total_size, 0.0f); // Initialize with zeros
+  m_data.resize(compute_numel(), 0.0f); // Initialize with zeros
+}
+
+Tensor::Tensor(const std::vector<float>& data, const std::vector<size_t>& shape): m_shape(shape), m_data(data) {
+  if (compute_numel() != m_data.size())
+    throw std::invalid_argument("Data size does not match shape");
 }
 
 Tensor::~Tensor() {} // m_data and m_shape are automatically cleaned up because they are std::vector
@@ -18,6 +19,20 @@ float* Tensor::data() {
 
 const float* Tensor::data() const {
   return m_data.data();
+}
+
+void Tensor::zero() {
+  std::fill(m_data.begin(), m_data.end(), 0.0f);
+}
+
+void Tensor::fill(float value) {
+  std::fill(m_data.begin(), m_data.end(), value);
+}
+
+size_t Tensor::compute_numel() const {
+  size_t total = 1;
+  for (size_t dim : m_shape) total *= dim;
+  return total;
 }
 
 const std::vector<size_t>& Tensor::shape() const {
