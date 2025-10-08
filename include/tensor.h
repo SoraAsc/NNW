@@ -22,6 +22,9 @@ public:
   static Tensor reduce_sum_rows(const Tensor& a); // Sum over rows, result is 1D
   // Basic Operations
   static Tensor add(const Tensor& a, const Tensor& b);
+  static Tensor sub(const Tensor& a, const Tensor& b);
+  static Tensor mul(const Tensor& a, const Tensor& b);
+  static float mean(const Tensor& a);
   static Tensor mul_scalar(const Tensor& a, float scalar);
   static Tensor matmul(const Tensor& a, const Tensor& b);
   static Tensor transpose(const Tensor& a);

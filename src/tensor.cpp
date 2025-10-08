@@ -95,6 +95,39 @@ Tensor Tensor::add(const Tensor& a, const Tensor& b) {
   return result;
 }
 
+Tensor Tensor::sub(const Tensor& a, const Tensor& b) {
+  if (a.m_shape != b.m_shape) throw std::invalid_argument("Shapes do not match for subtraction");
+  
+  Tensor result(a.m_shape);
+  size_t total_size = a.m_data.size();
+  
+  for (size_t i = 0; i < total_size; ++i)
+    result.m_data[i] = a.m_data[i] - b.m_data[i];
+  
+  return result;
+}
+
+Tensor Tensor::mul(const Tensor& a, const Tensor& b) {
+  if (a.m_shape != b.m_shape) throw std::invalid_argument("Shapes do not match for multiplication");
+  
+  Tensor result(a.m_shape);
+  size_t total_size = a.m_data.size();
+  
+  for (size_t i = 0; i < total_size; ++i)
+    result.m_data[i] = a.m_data[i] * b.m_data[i];
+  
+  return result;
+}
+
+float Tensor::mean(const Tensor& a) {
+  if (a.m_data.empty()) throw std::invalid_argument("Cannot compute mean of empty tensor");
+  
+  float sum = 0.0f;
+  for (float val : a.m_data) sum += val;
+  
+  return sum / static_cast<float>(a.m_data.size());
+}
+
 Tensor Tensor::mul_scalar(const Tensor& a, float scalar) {
   Tensor result(a.m_shape);
   size_t total_size = a.m_data.size();
