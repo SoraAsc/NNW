@@ -2,6 +2,14 @@
 #include "tensor.h"
 #include <memory>
 
+enum class ActivationType {
+  NONE = 0,
+  RELU,
+  SIGMOID,
+  TANH,
+  SOFTMAX
+};
+
 class Activation {
 public:
   virtual ~Activation() = default;
@@ -13,11 +21,3 @@ public:
 
 // Factory function to create activation by type
 std::unique_ptr<Activation> create_activation(ActivationType t);
-
-enum class ActivationType {
-  NONE = 0,
-  RELU,
-  SIGMOID,
-  TANH,
-  SOFTMAX
-};
