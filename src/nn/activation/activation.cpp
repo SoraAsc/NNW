@@ -1,9 +1,6 @@
 #include "nn/activation/activation.h"
 #include <stdexcept>
 #include <cmath>
-// #include "tensor.h"
-// #include <string>
-// #include <cmath>
 
 struct ReLUActivation : public Activation {
   void forward(Tensor& data) override {
@@ -78,7 +75,7 @@ std::unique_ptr<Activation> create_activation(ActivationType t) {
     case ActivationType::SIGMOID:
       return std::make_unique<SigmoidActivation>();
     case ActivationType::TANH:
-      throw std::runtime_error("Tanh activation not implemented yet");
+      return std::make_unique<TanhActivation>();
     case ActivationType::SOFTMAX:
       throw std::runtime_error("Softmax activation not implemented yet");
     case ActivationType::NONE:
