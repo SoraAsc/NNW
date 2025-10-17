@@ -7,6 +7,7 @@
 #include "nn/model.h"
 #include "nn/loss/loss_mse.h"
 #include "training/optimizer/optimizer_sgd.h"
+#include "training/optimizer/optimizer_adamw.h"
 #include "training/trainer/trainer.h"
 
 int main() {
@@ -16,7 +17,8 @@ int main() {
 
   // Loss and optimizer
   MSELoss loss;
-  SGD opt(model, 0.5f);
+  AdamW opt(model);
+  // SGD opt(model, 0.5f);
 
   // Trainer config
   TrainerConfig cfg;
