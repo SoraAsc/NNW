@@ -9,13 +9,11 @@ public:
   Tensor backward(const Tensor& grad_output) override; // compute gradients and return grad_input
   void update(float learning_rate) override; // apply update to weights and biases
   void zero_grad() override; // clear stored gradients
+  std::vector<std::pair<Tensor*, Tensor*>> get_parameters() override; // weights/biases and their gradients
   std::string info() override;
   std::string detailed_info() override;
   ~DenseLayer();
 
-  // accessors to inspect weights/biases from bindings
-  const Tensor& get_weights() const { return weights; }
-  const Tensor& get_biases()  const { return biases; }
 
 private:
   Tensor weights; // [out_features, in_features]

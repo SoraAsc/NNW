@@ -64,6 +64,13 @@ void DenseLayer::zero_grad() {
   grad_biases.zero();
 }
 
+std::vector<std::pair<Tensor*, Tensor*>> DenseLayer::get_parameters() {
+  std::vector<std::pair<Tensor*, Tensor*>> out;
+  out.emplace_back(&weights, &grad_weights);
+  out.emplace_back(&biases,  &grad_biases);
+  return out;
+}
+
 std::string DenseLayer::info() {
   std::ostringstream oss;
   oss << "Dense Layer: ";
