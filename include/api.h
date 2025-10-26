@@ -23,6 +23,14 @@ extern "C" {
   typedef enum { NN_OPT_SGD = 0, NN_OPT_ADAMW = 1 } NN_Optimizer;
   typedef enum { NN_LOSS_MSE = 0 } NN_Loss;
 
+  // Trainer config (C struct)
+  typedef struct {
+    size_t epochs = 1000;
+    size_t batch_size = 4;
+    int    shuffle = 1; // 0=false, non-zero=true
+    float  learning_rate = 0.1f;
+  } NN_TrainerConfig; 
+
   // Model
   API NN_Model* nn_create_model(size_t input_dim);
   API void nn_free_model(NN_Model* model);
@@ -32,23 +40,11 @@ extern "C" {
   API size_t nn_get_output_dim(const  NN_Model* model);
 
   // Trainer
-  API NN_Trainer* nn_create_trainer(NN_Model* model, NN_Optimizer opt, NN_Loss loss, const TrainerConfig* cfg);
+  API NN_Trainer* nn_create_trainer(NN_Model* model, NN_Optimizer opt, NN_Loss loss, const NN_TrainerConfig* cfg);
   API void nn_free_trainer(NN_Trainer* trainer);
 
   API void nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t x_dim, const float* y, size_t y_dim);
   API void nn_predict(const NN_Model* model, const float* x, size_t n_samples, size_t x_dim, float* out, size_t y_dim);
-  
-  // // Models Handle
-  // API Model* create_model();
-  // API float* predict_model(Model* model, Tensor* input);
-  // API void free_model(Model* model);
-  
-  // // Layers Handleout_features
-  // API void add_dense_layer(Model* model, size_t units, ActivationType act_type);
-  
-  // // Trainer Handle
-  // API Trainer* create_trainer(Model* model, OptimizerType opt_type, LossType loss_type, TrainerConfig cfg);
-  // API Model* train(Trainer* trainer, const std::vector<Tensor> &inputs, const std::vector<Tensor> &targets); 
-  // API void free_trainer(Trainer* trainer);
-  // // Agent Handle
+
+  // Agent Handle
 }

@@ -11,7 +11,7 @@ int main(void){
   nn_add_dense(m, 1, NN_ACT_LINEAR);
   out = nn_get_output_dim(m);
 
-  TrainerConfig cfg = { .epochs = 3000, .batch_size = 16, .shuffle = true };
+  NN_TrainerConfig cfg = { .epochs = 3000, .batch_size = 16, .shuffle = 1, .learning_rate = 0.01f };
   NN_Trainer* t = nn_create_trainer(m, NN_OPT_ADAMW, NN_LOSS_MSE, &cfg);
 
   // Dataset: 6, in=3, out=1
@@ -20,7 +20,6 @@ int main(void){
 
   for (int i = 0; i < n_dataset_samples*in; ++i) X[i] /= max_value;
   for (int i = 0; i < n_dataset_samples*out; ++i) Y[i] /= max_value;
-
 
   nn_train_fit(t, X, n_dataset_samples, in, Y, out);
 
