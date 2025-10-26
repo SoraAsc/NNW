@@ -20,6 +20,8 @@ public:
 
   // Train on a single batch, return the average loss for the batch
   float train_batch(const std::vector<Tensor>& batch_inputs, const std::vector<Tensor>& batch_targets);
+
+  Model* get_model() { return m_model; }
 private:
   Model* m_model;
   Loss* m_loss;
