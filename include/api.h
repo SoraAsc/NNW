@@ -25,10 +25,10 @@ extern "C" {
 
   // Trainer config (C struct)
   typedef struct {
-    size_t epochs = 1000;
-    size_t batch_size = 4;
-    int    shuffle = 1; // 0=false, non-zero=true
-    float  learning_rate = 0.1f;
+    size_t epochs;
+    size_t batch_size;
+    int shuffle; // 0=false, non-zero=true
+    float learning_rate;
   } NN_TrainerConfig; 
 
   // Model
