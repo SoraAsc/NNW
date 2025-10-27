@@ -1,39 +1,77 @@
 import ctypes
 import os
-import math
+import numpy as np
 
-lib_path = os.path.join(os.path.dirname(__file__), '../../build/neural_wrapper.so')
-lib = ctypes.CDLL(lib_path)
+LIB_PATH = os.path.join(os.path.dirname(__file__), '../../build/nn.so')
 
-# class DenseLayer(ctypes.Structure):
-    # _fields_ = [("weights", ctypes.c_void_p), ("biases", ctypes.c_void_p)]
+# Load shared library
+try:
+    lib = ctypes.CDLL(LIB_PATH)
+except OSError as e:
+    raise OSError(f"Could not load shared library '{LIB_PATH}': {e}")
 
-lib.dense_layer_create.argtypes = [ctypes.c_size_t, ctypes.c_size_t]
-lib.dense_layer_create.restype = ctypes.c_void_p
-# lib.dense_layer_create.restype = ctypes.POINTER(DenseLayer)
+class NN_TrainerConfig(ctypes.Structure):
+    _fields_ = [
+        ("epochs", ctypes.c_size_t),
+        ("batch_size", ctypes.c_size_t),
+        ("shuffle", ctypes.c_int),
+        ("learning_rate", ctypes.c_float),
+    ]
 
-lib.dense_layer_free.argtypes = [ctypes.c_void_p]
-lib.dense_layer_free.restype = None
+lib.nn_create_model.restype = ctypes.c_void_p
+lib.nn_create_model.argtypes = [ctypes.c_size_t]
 
-lib.dense_info.argtypes = [ctypes.c_void_p]
-lib.dense_info.restype = ctypes.c_char_p
+lib.nn_add_dense.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int]
 
-lib.dense_detailed_info.argtypes = [ctypes.c_void_p]
-lib.dense_detailed_info.restype = ctypes.c_char_p
+lib.nn_create_trainer.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.POINTER(NN_TrainerConfig)]
+lib.nn_create_trainer.restype = ctypes.c_void_p
 
-def create_dense_layer(in_features, out_features):
-    dense_layer = lib.dense_layer_create(in_features, out_features)
-    return dense_layer
 
-def free_dense_layer(layer):
-    lib.dense_layer_free(layer)
+lib.nn_train_fit.argtypes = [
+    ctypes.c_void_p,
+    ctypes.POINTER(ctypes.c_float), ctypes.c_size_t, ctypes.c_size_t,
+    ctypes.POINTER(ctypes.c_float), ctypes.c_size_t
+]
 
-# Example usage
+lib.nn_predict.argtypes = [
+    ctypes.c_void_p,
+    ctypes.POINTER(ctypes.c_float), ctypes.c_size_t, ctypes.c_size_t,
+    ctypes.POINTER(ctypes.c_float), ctypes.c_size_t
+]
+
+lib.nn_free_model.argtypes = [ctypes.c_void_p]
+lib.nn_free_trainer.argtypes = [ctypes.c_void_p]
+
+# --- Exemplo de uso ---
 if __name__ == "__main__":
-    layer = create_dense_layer(10, 15)
-    print("Layer info:", lib.dense_info(layer))
+    # Criar modelo
+    model = lib.nn_create_model(2)
+    lib.nn_add_dense(model, 4, 1)  # RELU
+    lib.nn_add_dense(model, 1, 2)  # SIGMOID
 
-    detailed_info = lib.dense_detailed_info(layer)
-    print("Detailed Layer info:", detailed_info.decode('utf-8'))
+    # Configurar treinador
+    cfg = NN_TrainerConfig(epochs=300, batch_size=4, shuffle=1, learning_rate=0.01)
+    trainer = lib.nn_create_trainer(model, 1, 0, ctypes.byref(cfg))  # ADAMW, MSE
 
-    free_dense_layer(layer)
+    # Dataset XOR
+    X = np.array([[0,0],[0,1],[1,0],[1,1]], dtype=np.float32)
+    Y = np.array([[0],[1],[1],[0]], dtype=np.float32)
+
+    lib.nn_train_fit(
+        trainer,
+        X.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), X.shape[0], X.shape[1],
+        Y.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), Y.shape[1]
+    )
+
+    # Previsão
+    out = np.zeros((4,1), dtype=np.float32)
+    lib.nn_predict(
+        model,
+        X.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), X.shape[0], X.shape[1],
+        out.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), out.shape[1]
+    )
+    print("Predições:", out)
+
+    # Liberar memória
+    lib.nn_free_trainer(trainer)
+    lib.nn_free_model(model)
