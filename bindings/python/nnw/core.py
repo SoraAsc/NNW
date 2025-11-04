@@ -1,7 +1,7 @@
 import numpy as np
 import ctypes
 import weakref
-from . import _ffi
+from . import _ffi, enums
 
 class NNError(Exception):
     pass
@@ -20,10 +20,10 @@ class Model:
             raise NNError("nn_create_model returned NULL")
         self._finalizer = weakref.finalize(self, _ffi.lib.nn_free_model, self._as_void_p)
 
-    def add_dense(self, units: int, activation: int):
+    def add_dense(self, units: int, activation: enums.Activation):
         _ffi.lib.nn_add_dense(self._as_void_p, units, activation)
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X: np.ndarray):
         X = _ensure_float32_contiguous(X)
         if X.ndim == 1:
             X = X.reshape(1, -1)
@@ -48,7 +48,7 @@ class Model:
         self.free()
 
 class Trainer:
-    def __init__(self, model: Model, optimizer: int, loss: int, cfg=None):
+    def __init__(self, model: Model, optimizer: enums.Optimizer, loss: enums.Loss, cfg=None):
         if not isinstance(model, Model):
             raise TypeError("Trainer expects a Model instance")
         if cfg is None:
