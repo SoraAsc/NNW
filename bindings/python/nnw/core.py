@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import numpy as np
 import ctypes
 import weakref
@@ -5,6 +6,13 @@ from . import _ffi, enums
 
 class NNError(Exception):
     pass
+
+@dataclass
+class TrainerConfig:
+    epochs: int
+    batch_size: int
+    shuffle: bool
+    learning_rate: float
 
 def _ensure_float32_contiguous(arr):
     a = np.ascontiguousarray(arr, dtype=np.float32)
@@ -42,33 +50,25 @@ class Model:
     def free(self):
         if self._finalizer.alive:
             self._finalizer()
+
     def __enter__(self):
         return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.free()
 
 class Trainer:
-    def __init__(self, model: Model, optimizer: enums.Optimizer, loss: enums.Loss, cfg=None):
+    def __init__(self, model: Model, optimizer: enums.Optimizer, loss: enums.Loss, cfg: TrainerConfig = None):
         if not isinstance(model, Model):
             raise TypeError("Trainer expects a Model instance")
-        if cfg is None:
-            cfg = _ffi.NN_TrainerConfig()
-            cfg.epochs = 1000
-            cfg.batch_size = 4
-            cfg.shuffle = 1
-            cfg.learning_rate = 0.1
-            cfg = cfg
-        elif isinstance(cfg, dict):
-            c = _ffi.NN_TrainerConfig()
-            c.epochs = cfg.get("epochs", 1000)
-            c.batch_size = cfg.get("batch_size", 4)
-            c.shuffle = 1 if cfg.get("shuffle", True) else 0
-            c.learning_rate = float(cfg.get("learning_rate", 0.1))
-            cfg = c
-        elif not isinstance(cfg, _ffi.NN_TrainerConfig):
-            raise TypeError("cfg must be dict or NN_TrainerConfig")
+        t_config = _ffi.NN_TrainerConfig(2000, 4, 1, 0.1)
+        if cfg is not None:
+            t_config.epochs = cfg.epochs
+            t_config.batch_size = cfg.batch_size
+            t_config.shuffle = 1 if cfg.shuffle else 0
+            t_config.learning_rate = cfg.learning_rate
 
-        self._as_void_p = _ffi.lib.nn_create_trainer(model._as_void_p, optimizer, loss, ctypes.byref(cfg))
+        self._as_void_p = _ffi.lib.nn_create_trainer(model._as_void_p, optimizer, loss, ctypes.byref(t_config))
         if not self._as_void_p:
             raise NNError("nn_create_trainer returned NULL")
         self._finalizer = weakref.finalize(self, _ffi.lib.nn_free_trainer, self._as_void_p)
@@ -96,5 +96,6 @@ class Trainer:
 
     def __enter__(self):
         return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.free()
