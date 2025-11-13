@@ -1,43 +1,40 @@
 ﻿using System;
-using NNWrapper;
+using Examples;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        using var model = Model.Create(2);
-        model.AddDense(1, Activation.SIGMOID);
+        string choice = args.Length > 0 ? args[0].Trim().ToUpperInvariant() : string.Empty;
 
-        var cfg = new TrainerConfig
+        if (string.IsNullOrEmpty(choice))
         {
-            Epochs = 3000,
-            BatchSize = 4,
-            LearningRate = 0.01f
-        };
+            Console.WriteLine("Choose an example to execute:");
+            Console.WriteLine("  AND  - Logic Gate AND");
+            Console.WriteLine("  XOR  - Logic Gate XOR");
+            Console.Write("Type AND or XOR (or run as an arg): ");
+            choice = Console.ReadLine()?.Trim().ToUpperInvariant() ?? string.Empty;
+        }
 
-        using var trainer = Trainer.Create(model, Optimizer.ADAMW, Loss.MSE, cfg);
-
-        float[,] X =
+        try
         {
-            {0, 0},
-            {0, 1},
-            {1, 0},
-            {1, 1}
-        };
-
-        float[,] Y =
+            switch (choice)
+            {
+                case "AND":
+                    AndExample.Run();
+                    break;
+                case "XOR":
+                    XorExample.Run();
+                    break;
+                default:
+                    Console.WriteLine("Invalid Option. Use AND or XOR.");
+                    break;
+            }
+        }
+        catch (Exception ex)
         {
-            {0},
-            {0},
-            {0},
-            {1}
-        };
-
-        trainer.Fit(X, Y);
-
-        var preds = model.Predict(X);
-        Console.WriteLine("Predictions:");
-        for (int i = 0; i < preds.GetLength(0); i++)
-            Console.WriteLine($"{X[i,0]} AND {X[i,1]} = {preds[i,0]:F2}");
+            Console.WriteLine($"Error while executing: {ex.Message}");
+            Console.WriteLine(ex);
+        }
     }
 }
