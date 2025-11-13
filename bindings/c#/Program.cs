@@ -1,34 +1,43 @@
 ﻿using System;
+using NNWrapper;
 
 class Program
 {
     static void Main()
     {
-        var model = NNInterop.nn_create_model((UIntPtr)3);
-        NNInterop.nn_add_dense(model, (UIntPtr)4, 1); // act=1 (ReLU)
-        NNInterop.nn_add_dense(model, (UIntPtr)1, 0); // act=0 (Linear)
+        using var model = Model.Create(2);
+        model.AddDense(1, Activation.SIGMOID);
 
-        var cfg = new NNInterop.NN_TrainerConfig
+        var cfg = new TrainerConfig
         {
-            epochs = (UIntPtr)1000,
-            batch_size = (UIntPtr)2,
-            shuffle = 1,
-            learning_rate = 0.01f
+            Epochs = 3000,
+            BatchSize = 4,
+            LearningRate = 0.01f
         };
 
-        IntPtr trainer = NNInterop.nn_create_trainer(model, 1, 0, ref cfg); // optimizer=1, loss=0
+        using var trainer = Trainer.Create(model, Optimizer.ADAMW, Loss.MSE, cfg);
 
-        float[] x = { 0f, 0f, 0f, 1f, 1f, 1f }; // 2 samples, 3 features
-        float[] y = { 0f, 1f };                 // 2 labels
+        float[,] X =
+        {
+            {0, 0},
+            {0, 1},
+            {1, 0},
+            {1, 1}
+        };
 
-        NNInterop.nn_train_fit(trainer, x, (UIntPtr)2, (UIntPtr)3, y, (UIntPtr)1);
+        float[,] Y =
+        {
+            {0},
+            {0},
+            {0},
+            {1}
+        };
 
-        float[] outBuf = new float[1];
-        NNInterop.nn_predict(model, new float[] { 1f, 1f, 1f }, (UIntPtr)1, (UIntPtr)3, outBuf, (UIntPtr)1);
+        trainer.Fit(X, Y);
 
-        Console.WriteLine("Pred: " + outBuf[0]);
-
-        NNInterop.nn_free_trainer(trainer);
-        NNInterop.nn_free_model(model);
+        var preds = model.Predict(X);
+        Console.WriteLine("Predictions:");
+        for (int i = 0; i < preds.GetLength(0); i++)
+            Console.WriteLine($"{X[i,0]} AND {X[i,1]} = {preds[i,0]:F2}");
     }
 }
