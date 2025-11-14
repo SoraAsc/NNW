@@ -1,17 +1,23 @@
 import ctypes
 import os
 import sys
+import importlib.resources as resources
 
-LIB_REL = os.path.join(os.path.dirname(__file__), '../../../build/nn.so')
-if sys.platform == "win32":
-    LIB_REL = os.path.join(os.path.dirname(__file__), '../../../build/nn.dll')
+def _load_native():
+    libname = "nn.dll" if sys.platform == "win32" else "nn.so"
+    try:
+        lib_path = resources.files("nnw").joinpath("libs", libname)
+        if lib_path.is_file():
+            return ctypes.CDLL(str(lib_path))
+    except Exception:
+        pass
+    here = os.path.dirname(__file__)
+    local_lib_path = os.path.abspath(os.path.join(here, "..", "..", "..", "build", libname))
+    if os.path.exists(local_lib_path):
+        return ctypes.CDLL(local_lib_path)
+    raise OSError(f"Could not find native library {libname}.")
 
-LIB_PATH = os.path.abspath(LIB_REL)
-
-try:
-    lib = ctypes.CDLL(LIB_PATH)
-except OSError as e:
-    raise OSError(f"Could not load shared library '{LIB_PATH}': {e}")
+lib = _load_native()
 
 # Structures
 class NN_TrainerConfig(ctypes.Structure):

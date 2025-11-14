@@ -1,0 +1,99 @@
+name: Build Native + Bindings + Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Linux build tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build python3-dev zip
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          mkdir build
+          cd build
+          if [ "${{runner.os}}" = "Windows" ]; then
+            cmake .. -A x64 -DBUILD_EXAMPLES=OFF
+          else
+            cmake .. -DBUILD_EXAMPLES=OFF
+          fi
+
+      - name: Build C++
+        shell: bash
+        run: |
+          cd build
+          if [ "${{runner.os}}" = "Windows" ]; then
+            cmake --build . --config Release
+          else
+            cmake --build . --config Release -- -j$(nproc)
+          fi
+
+      - name: Prepare artifacts dirs
+        shell: bash
+        run: |
+          mkdir -p artifacts/native artifacts/python
+
+      - name: Copy native library into bindings and artifacts
+        shell: bash
+        run: |
+          if [ "${{runner.os}}" = "Windows" ]; then
+            LIB_EXT="dll"
+          else
+            LIB_EXT="so"
+          fi
+
+          LIB_PATH=$(find build -maxdepth 5 -name "nn.${LIB_EXT}" | head -n 1)
+          echo "Found native lib at: $LIB_PATH"
+
+          mkdir -p bindings/python/nnw/libs
+          cp "$LIB_PATH" bindings/python/nnw/libs/
+
+          cp "$LIB_PATH" artifacts/native/
+
+      - name: Build python wheel
+        working-directory: bindings/python
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build -w -o ../../artifacts/python
+
+      - name: Upload artifacts for this OS
+        uses: actions/upload-artifact@v4
+        with:
+          name: nn-artifacts-${{ matrix.os }}
+          path: artifacts
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: full_artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: full_artifacts/**/*
