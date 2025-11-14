@@ -6,8 +6,9 @@ project(NeuralWrapper LANGUAGES CXX)
 # -----------------------
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)  # DLL/so need this
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -25,20 +26,26 @@ file(GLOB LIB_SRCS
 )
 
 add_library(nn SHARED ${LIB_SRCS})
+target_include_directories(nn PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
 set_target_properties(nn PROPERTIES
   OUTPUT_NAME "nn"
   PREFIX ""
 )
 
 # -----------------------
-# Examples
+# Option to build examples
 # -----------------------
-file(GLOB EXAMPLES_SRC examples/*.cpp)
-foreach(EXAMPLE_SRC ${EXAMPLES_SRC})
-  get_filename_component(EXAMPLE_NAME ${EXAMPLE_SRC} NAME_WE)
-  add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
-  target_link_libraries(${EXAMPLE_NAME} nn)
-endforeach()
+option(BUILD_EXAMPLES "Build example executables" ON)
+
+if(BUILD_EXAMPLES)
+  file(GLOB EXAMPLES_SRC examples/*.cpp)
+  foreach(EXAMPLE_SRC ${EXAMPLES_SRC})
+    get_filename_component(EXAMPLE_NAME ${EXAMPLE_SRC} NAME_WE)
+    add_executable(${EXAMPLE_NAME} ${EXAMPLE_SRC})
+    target_link_libraries(${EXAMPLE_NAME} nn)
+  endforeach()
+endif()
 
 # -----------------------
 # Installation rules
@@ -48,4 +55,5 @@ install(TARGETS nn
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
 install(DIRECTORY include/ DESTINATION include)
