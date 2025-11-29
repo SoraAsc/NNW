@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "Neural Network Wrapper"
 authors = [{ name = "SoraAsc" }]
 requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.3.4"
+]
 
 [tool.setuptools.packages.find]
 where = ["."]

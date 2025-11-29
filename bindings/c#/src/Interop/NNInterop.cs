@@ -18,23 +18,20 @@ namespace NNWrapper
         {
             if (libraryName != LIB_NAME) return IntPtr.Zero;
 
-            string asmDir = Path.GetDirectoryName(assembly.Location) ?? AppContext.BaseDirectory;
-
-            string rel = Path.Combine(asmDir, "..", "..", "..", "build",
-                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "nn.dll" : "nn.so");
-
-            string candidate = Path.GetFullPath(rel);
-
-            if (File.Exists(candidate)) return NativeLibrary.Load(candidate);
-
-            // fallback
             string alt = Path.Combine(AppContext.BaseDirectory,
                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "nn.dll" : "nn.so");
-
             if (File.Exists(alt)) return NativeLibrary.Load(alt);
 
-            return IntPtr.Zero;
+            string rid = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win-x64"
+                    : "linux-x64";
+
+            string runtimesPath = Path.Combine(AppContext.BaseDirectory, "runtimes", rid, "native",
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "nn.dll" : "nn.so");
+            if (File.Exists(runtimesPath)) return NativeLibrary.Load(runtimesPath);
+
+            return IntPtr.Zero; // fallback
         }
+
 
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr nn_create_model(UIntPtr input_dim);

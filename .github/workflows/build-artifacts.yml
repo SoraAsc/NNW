@@ -5,12 +5,14 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  native:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -31,9 +33,9 @@ jobs:
       - name: Configure CMake
         shell: bash
         run: |
-          mkdir build
+          mkdir -p build
           cd build
-          if [ "${{runner.os}}" = "Windows" ]; then
+          if [ "${{ runner.os }}" = "Windows" ]; then
             cmake .. -A x64 -DBUILD_EXAMPLES=OFF
           else
             cmake .. -DBUILD_EXAMPLES=OFF
@@ -43,33 +45,64 @@ jobs:
         shell: bash
         run: |
           cd build
-          if [ "${{runner.os}}" = "Windows" ]; then
+          if [ "${{ runner.os }}" = "Windows" ]; then
             cmake --build . --config Release
           else
             cmake --build . --config Release -- -j$(nproc)
           fi
 
-      - name: Prepare artifacts dirs
+      - name: Prepare artifacts dir
         shell: bash
         run: |
-          mkdir -p artifacts/native artifacts/python
+          mkdir -p artifacts/native
 
-      - name: Copy native library into bindings and artifacts
+      - name: Copy and rename native library
         shell: bash
         run: |
-          if [ "${{runner.os}}" = "Windows" ]; then
+          if [ "${{ runner.os }}" = "Windows" ]; then
             LIB_EXT="dll"
           else
             LIB_EXT="so"
           fi
 
-          LIB_PATH=$(find build -maxdepth 5 -name "nn.${LIB_EXT}" | head -n 1)
+          LIB_PATH=$(find build -maxdepth 6 -type f -name "nn.${LIB_EXT}" | head -n 1)
+          if [ -z "$LIB_PATH" ]; then
+            echo "Native lib not found!"
+            exit 1
+          fi
           echo "Found native lib at: $LIB_PATH"
+          cp "$LIB_PATH" "artifacts/native/nn.${LIB_EXT}"
 
+      - name: Upload native artifact (per OS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.os }}
+          path: artifacts/native/*
+
+  wheel:
+    runs-on: ubuntu-latest
+    needs: native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download native libs (linux runner artifact)
+        uses: actions/download-artifact@v5
+        with:
+          name: native-ubuntu-latest
+          path: native_artifacts/linux
+
+      - name: Download native libs (windows runner artifact)
+        uses: actions/download-artifact@v5
+        with:
+          name: native-windows-latest
+          path: native_artifacts/windows
+
+      - name: Copy native libs into python package
+        run: |
           mkdir -p bindings/python/nnw/libs
-          cp "$LIB_PATH" bindings/python/nnw/libs/
-
-          cp "$LIB_PATH" artifacts/native/
+          cp native_artifacts/linux/* bindings/python/nnw/libs/
+          cp native_artifacts/windows/* bindings/python/nnw/libs/
 
       - name: Build python wheel
         working-directory: bindings/python
@@ -77,23 +110,75 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build -w -o ../../artifacts/python
 
-      - name: Upload artifacts for this OS
+      - name: Upload wheel
         uses: actions/upload-artifact@v4
         with:
-          name: nn-artifacts-${{ matrix.os }}
-          path: artifacts
+          name: wheel
+          path: artifacts/python/*.whl
+
+  csharp:
+    runs-on: ubuntu-latest
+    needs: native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build C# project
+        working-directory: bindings/c#
+        run: |
+          dotnet restore
+          dotnet build -c Release
+          dotnet pack -c Release -o ../../artifacts/csharp
+
+      - name: Upload C# artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: csharp
+          path: artifacts/csharp/*.nupkg
 
   release:
-    needs: build
+    needs: [native, wheel, csharp]
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download all artifacts
+      - name: Download wheel
         uses: actions/download-artifact@v5
         with:
-          path: full_artifacts
+          name: wheel
+          path: release_artifacts/wheel
 
-      - name: Create Release
+      - name: Download native linux
+        uses: actions/download-artifact@v5
+        with:
+          name: native-ubuntu-latest
+          path: release_artifacts/native/linux
+
+      - name: Download native windows
+        uses: actions/download-artifact@v5
+        with:
+          name: native-windows-latest
+          path: release_artifacts/native/windows
+
+      - name: Download C# artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: csharp
+          path: release_artifacts/csharp
+
+      - name: List release files
+        run: |
+          ls -la release_artifacts || true
+          find release_artifacts -maxdepth 3 -type f -print
+
+      - name: Create GitHub Release and upload files
         uses: softprops/action-gh-release@v2
         with:
-          files: full_artifacts/**/*
+          files: |
+            release_artifacts/wheel/*.whl
+            release_artifacts/native/**/*
+            release_artifacts/csharp/*.nupkg

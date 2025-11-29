@@ -5,19 +5,28 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <Pack>true</Pack>
+    <Version>0.1.0</Version>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
-
-  <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
-    <None Include="../../build/nn.dll">
+  <ItemGroup>
+    <None Include="../../build/nn.dll" Condition="Exists('../../build/nn.dll')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>runtimes/win-x64/native/</PackagePath>
+    </None>
+    <None Include="../../build/nn.so" Condition="Exists('../../build/nn.so')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>true</Pack>
+      <PackagePath>runtimes/linux-x64/native/</PackagePath>
     </None>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(OS)' != 'Windows_NT'">
-    <None Include="../../build/nn.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+  <ItemGroup>
+    <None Include="src/Examples/**" Pack="false" />
   </ItemGroup>
+
 
 </Project>
