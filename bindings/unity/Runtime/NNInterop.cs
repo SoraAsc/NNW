@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace NNW.Unity
+namespace NNWrapper
 {
     public static class NNInterop
     {
