@@ -1,3 +1,5 @@
+using System;
+
 namespace NNWrapper
 {
     public sealed class TrainerConfig
