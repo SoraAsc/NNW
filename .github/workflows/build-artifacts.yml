@@ -227,7 +227,7 @@ jobs:
         run: |
           rm -rf .unity-branch
           mkdir -p .unity-branch/Runtime/Plugins
-          cp -R bindings/c#/src/Core ./unity-branch/Runtime/
+          cp -R bindings/c#/src/Core .unity-branch/Runtime/
           cp -R native_artifacts/linux/* .unity-branch/Runtime/Plugins/
           cp -R native_artifacts/windows/* .unity-branch/Runtime/Plugins/
 
