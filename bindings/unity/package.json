@@ -1,0 +1,7 @@
+{
+  "name": "com.soraasc.nnw",
+  "displayName": "NNW Unity",
+  "version": "0.1.0",
+  "description": "Unity NNW Wrapper",
+  "keywords": ["nnw", "neural network", "binding", "unity"]
+}
