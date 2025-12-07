@@ -45,7 +45,7 @@ int main() {
     Y.emplace_back(std::vector<float>{targets[i]}, std::vector<size_t>{1});
   }
 
-  std::cout << "Starting training (XOR)\n";
+  std::cout << "Starting training (AND)\n";
   trainer.train(X, Y);
 
   std::cout << "\nFinal Predictions:\n";
