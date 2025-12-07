@@ -23,6 +23,7 @@ file(GLOB LIB_SRCS
   src/nn/*.cpp
   src/training/optimizer/*.cpp
   src/training/trainer/*.cpp
+  src/rl/*.cpp
 )
 
 add_library(nn SHARED ${LIB_SRCS})
