@@ -37,6 +37,4 @@ extern "C" {
 
   API void nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t x_dim, const float* y, size_t y_dim);
   API void nn_predict(const NN_Model* model, const float* x, size_t n_samples, size_t x_dim, float* out, size_t y_dim);
-
-  // Agent Handle
 }

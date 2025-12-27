@@ -7,24 +7,24 @@ class Policy {
 public:
   virtual ~Policy() = default;
   
-  virtual size_t selectAction(const float* q_values, size_t num_actions) = 0;
+  virtual size_t select_action(const float* q_values, size_t num_actions) = 0;
 };
 
 class GreedyPolicy : public Policy {
 public:
   GreedyPolicy() = default;
   
-  size_t selectAction(const float* q_values, size_t num_actions) override;
+  size_t select_action(const float* q_values, size_t num_actions) override;
 };
 
 class EpsilonGreedyPolicy : public Policy {
 public:
   explicit EpsilonGreedyPolicy(float epsilon = 0.1f);
   
-  size_t selectAction(const float* q_values, size_t num_actions) override;
+  size_t select_action(const float* q_values, size_t num_actions) override;
   
-  void setEpsilon(float epsilon) { m_epsilon = epsilon; }
-  float getEpsilon() const { return m_epsilon; }
+  void set_epsilon(float epsilon) { m_epsilon = epsilon; }
+  float get_epsilon() const { return m_epsilon; }
 
 private:
   float m_epsilon;

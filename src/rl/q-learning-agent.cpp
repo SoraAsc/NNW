@@ -14,25 +14,25 @@ QLearningAgent::QLearningAgent(size_t states_num,
   m_policy = std::make_unique<EpsilonGreedyPolicy>(0.1f);
 }
 
-size_t QLearningAgent::chooseAction(size_t state) {
+size_t QLearningAgent::choose_action(size_t state) {
   std::vector<float> q_values(m_actions_num);
   for (size_t a = 0; a < m_actions_num; ++a)
     q_values[a] = m_q_table->get(state, a);
   
-  return m_policy->selectAction(q_values.data(), m_actions_num);
+  return m_policy->select_action(q_values.data(), m_actions_num);
 }
 
 void QLearningAgent::update(size_t state, size_t action, float reward, 
                             size_t next_state, bool done) {
   // Q-Learning: Q(s,a) = Q(s,a) + α[r + γ*max(Q(s',a')) - Q(s,a)]
   float current_q = m_q_table->get(state, action);
-  float max_next_q = done ? 0.0f : getMaxQValue(next_state);
+  float max_next_q = done ? 0.0f : get_max_qvalue(next_state);
   float new_q = current_q + m_learning_rate * (reward + m_discount_factor * max_next_q - current_q);
   
   m_q_table->set(state, action, new_q);
 }
 
-float QLearningAgent::getMaxQValue(size_t state) {
+float QLearningAgent::get_max_qvalue(size_t state) {
   float max_q = -std::numeric_limits<float>::infinity();
   
   for (size_t a = 0; a < m_actions_num; ++a) {

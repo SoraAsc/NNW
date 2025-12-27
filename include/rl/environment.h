@@ -12,17 +12,17 @@ public:
   virtual size_t reset() = 0;
   
   // Returns the current state
-  virtual size_t getState() const = 0;
+  virtual size_t get_state() const = 0;
   
   // Returns the reward of the last step  
-  virtual float getReward() const = 0;
+  virtual float get_reward() const = 0;
   
   // Returns the number of states
-  virtual size_t getNumStates() const = 0;
+  virtual size_t get_states_num() const = 0;
   
   // Returns the number of actions
-  virtual size_t getNumActions() const = 0;
+  virtual size_t get_actions_num() const = 0;
   
   // Returns if the episode is finished
-  virtual bool isDone() const = 0;
+  virtual bool is_done() const = 0;
 };

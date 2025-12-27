@@ -1,7 +1,7 @@
 #include "rl/policy.h"
 #include <algorithm>
 
-size_t GreedyPolicy::selectAction(const float* q_values, size_t num_actions) {
+size_t GreedyPolicy::select_action(const float* q_values, size_t num_actions) {
   size_t best_action = 0;
   float best_value = q_values[0];
   
@@ -18,7 +18,7 @@ size_t GreedyPolicy::selectAction(const float* q_values, size_t num_actions) {
 EpsilonGreedyPolicy::EpsilonGreedyPolicy(float epsilon) 
   : m_epsilon(epsilon) {}
 
-size_t EpsilonGreedyPolicy::selectAction(const float* q_values, size_t num_actions) {
+size_t EpsilonGreedyPolicy::select_action(const float* q_values, size_t num_actions) {
   std::uniform_real_distribution<float> dist(0.0f, 1.0f);
   
   if (dist(m_rng) < m_epsilon) {

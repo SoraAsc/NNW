@@ -12,19 +12,19 @@ public:
   
   ~QLearningAgent() = default;
   
-  size_t chooseAction(size_t state);
+  size_t choose_action(size_t state);
   
   void update(size_t state, size_t action, float reward, size_t next_state, bool done = false);
   
   // Getters
-  float getLearningRate() const { return m_learning_rate; }
-  float getDiscountFactor() const { return m_discount_factor; }
-  QTable* getQTable() { return m_q_table.get(); }
+  float get_learning_rate() const { return m_learning_rate; }
+  float get_discount_factor() const { return m_discount_factor; }
+  QTable* get_qtable() { return m_q_table.get(); }
   
   // Setters
-  void setLearningRate(float lr) { m_learning_rate = lr; }
-  void setDiscountFactor(float gamma) { m_discount_factor = gamma; }
-  void setPolicy(std::unique_ptr<Policy> policy) { m_policy = std::move(policy); }
+  void set_learning_rate(float lr) { m_learning_rate = lr; }
+  void set_discount_factor(float gamma) { m_discount_factor = gamma; }
+  void set_policy(std::unique_ptr<Policy> policy) { m_policy = std::move(policy); }
 
 private:
   std::unique_ptr<QTable> m_q_table;
@@ -33,5 +33,5 @@ private:
   float m_discount_factor;
   size_t m_actions_num;
   
-  float getMaxQValue(size_t state);
+  float get_max_qvalue(size_t state);
 };
