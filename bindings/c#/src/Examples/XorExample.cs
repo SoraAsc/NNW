@@ -1,4 +1,4 @@
-using NNWrapper;
+using NNW.Core.NN;
 
 namespace Examples
 {

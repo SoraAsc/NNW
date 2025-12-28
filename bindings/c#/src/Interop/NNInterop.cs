@@ -1,37 +1,16 @@
 using System;
-using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace NNWrapper
+namespace NNW.Interop
 {
-    public static class NNInterop
+    internal static class NNInterop
     {
         private const string LIB_NAME = "nn";
 
         static NNInterop()
         {
-            NativeLibrary.SetDllImportResolver(typeof(NNInterop).Assembly, ResolveNativeLibrary);
+            NativeNNResolver.EnsureLoaded();
         }
-
-        private static IntPtr ResolveNativeLibrary(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
-        {
-            if (libraryName != LIB_NAME) return IntPtr.Zero;
-
-            string alt = Path.Combine(AppContext.BaseDirectory,
-                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "nn.dll" : "nn.so");
-            if (File.Exists(alt)) return NativeLibrary.Load(alt);
-
-            string rid = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win-x64"
-                    : "linux-x64";
-
-            string runtimesPath = Path.Combine(AppContext.BaseDirectory, "runtimes", rid, "native",
-                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "nn.dll" : "nn.so");
-            if (File.Exists(runtimesPath)) return NativeLibrary.Load(runtimesPath);
-
-            return IntPtr.Zero; // fallback
-        }
-
 
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr nn_create_model(UIntPtr input_dim);

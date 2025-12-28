@@ -1,4 +1,4 @@
-namespace NNWrapper
+namespace NNW.Core.NN
 {
     public enum Optimizer : int
     {

@@ -1,6 +1,7 @@
 using System;
+using NNW.Interop;
 
-namespace NNWrapper
+namespace NNW.Core.NN
 {
     public sealed class Model : IDisposable
     {

@@ -1,7 +1,8 @@
 using System;
 using Microsoft.Win32.SafeHandles;
+using NNW.Interop;
 
-namespace NNWrapper
+namespace NNW.Core.NN
 {
     public sealed class NativeModelHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
