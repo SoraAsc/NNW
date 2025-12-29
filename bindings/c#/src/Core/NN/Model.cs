@@ -29,7 +29,7 @@ namespace NNW.Core.NN
             _handle.DangerousAddRef(ref added);
             try
             {
-                NNInterop.nn_add_dense(_handle.DangerousGetHandle(), new UIntPtr(units), (int)activation);
+                NNInterop.nn_add_dense(_handle.DangerousGetHandle(), new UIntPtr(units), activation);
             }
             finally
             {

@@ -23,7 +23,7 @@ namespace NNW.Core.NN
             {
                 IntPtr trainerPtr = NNInterop.nn_create_trainer(
                     model.NativeHandle.DangerousGetHandle(),
-                    (int)opt, (int)loss, ref nativeCfg);
+                    opt, loss, ref nativeCfg);
 
                 if (trainerPtr == IntPtr.Zero)
                     throw new InvalidOperationException("Failed to create native trainer.");
