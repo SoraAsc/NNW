@@ -1,7 +1,7 @@
 {
   "name": "com.soraasc.nnw",
   "displayName": "NNW Unity",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Unity NNW Wrapper",
-  "keywords": ["nnw", "neural network", "binding", "unity"]
+  "keywords": ["nnw", "neural network", "binding", "q-table", "unity"]
 }

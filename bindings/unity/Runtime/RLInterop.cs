@@ -1,0 +1,60 @@
+using System;
+using System.Runtime.InteropServices;
+using NNW.Core.RL;
+
+namespace NNW.Interop
+{
+    internal static class RLInterop
+    {
+        private const string LIB_NAME = "nn";
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr rl_create_qtable(UIntPtr states_num, UIntPtr actions_num);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_free_qtable(IntPtr qtable);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float rl_get_qtable(IntPtr qtable, UIntPtr state, UIntPtr action);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_set_qtable(IntPtr qtable, UIntPtr state, UIntPtr action, float value);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr rl_get_qtable_states(IntPtr qtable);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr rl_get_qtable_actions(IntPtr qtable);
+
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr rl_create_agent(UIntPtr states_num, UIntPtr actions_num, 
+                                                     float learning_rate, float discount_factor);
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_free_agent(IntPtr agent);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr rl_choose_agent_action(IntPtr agent, UIntPtr state);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_update_agent(IntPtr agent, UIntPtr state, UIntPtr action, 
+                                                   float reward, UIntPtr next_state, int done);
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_set_agent_policy(IntPtr agent, PolicyType policy_type, float epsilon);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float rl_get_agent_learning_rate(IntPtr agent);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_set_agent_learning_rate(IntPtr agent, float lr);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float rl_get_agent_discount_factor(IntPtr agent);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_set_agent_discount_factor(IntPtr agent, float gamma);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr rl_get_agent_qtable(IntPtr agent);
+    }
+}

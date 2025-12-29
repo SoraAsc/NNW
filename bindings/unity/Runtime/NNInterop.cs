@@ -1,9 +1,10 @@
 using System;
 using System.Runtime.InteropServices;
+using NNW.Core.NN;
 
-namespace NNWrapper
+namespace NNW.Interop
 {
-    public static class NNInterop
+    internal static class NNInterop
     {
         private const string LIB_NAME = "nn";
 
@@ -14,7 +15,7 @@ namespace NNWrapper
         public static extern void nn_free_model(IntPtr model);
 
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void nn_add_dense(IntPtr model, UIntPtr units, int act);
+        public static extern void nn_add_dense(IntPtr model, UIntPtr units, Activation act);
 
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern UIntPtr nn_get_input_dim(IntPtr model);
@@ -25,8 +26,8 @@ namespace NNWrapper
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr nn_create_trainer(
             IntPtr model,
-            int optimizer,
-            int loss,
+            Optimizer optimizer,
+            Loss loss,
             ref NN_TrainerConfig cfg
         );
 
