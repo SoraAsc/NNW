@@ -66,14 +66,14 @@ int main() {
   
   MyGridWorld env(5, 5);
   
-  RL_Agent* agent = rl_agent_create(
+  RL_Agent* agent = rl_create_agent(
     env.get_states_num(),
     env.get_actions_num(),
     0.1f,   // learning rate
     0.99f   // discount factor
   );
   
-  rl_agent_set_policy(agent, RL_POLICY_EPSILON_GREEDY, 0.1f);
+  rl_set_agent_policy(agent, RL_POLICY_EPSILON_GREEDY, 0.1f);
   
   int num_episodes = 100;
   int max_steps = 100;
@@ -86,7 +86,7 @@ int main() {
     float episode_reward = 0.0f;
     
     while (!env.is_done() && steps < max_steps) {
-      size_t action = rl_agent_choose_action(agent, state);
+      size_t action = rl_choose_agent_action(agent, state);
       
       env.step(action);
       
@@ -94,7 +94,7 @@ int main() {
       float reward = env.get_reward();
       int done = env.is_done() ? 1 : 0;
       
-      rl_agent_update(agent, state, action, reward, next_state, done);
+      rl_update_agent(agent, state, action, reward, next_state, done);
       
       episode_reward += reward;
       state = next_state;
@@ -108,7 +108,7 @@ int main() {
   }
   
   std::cout << "\nTesting with Greedy Policy..." << std::endl;
-  rl_agent_set_policy(agent, RL_POLICY_GREEDY, 0.0f);
+  rl_set_agent_policy(agent, RL_POLICY_GREEDY, 0.0f);
   
   for (int test = 0; test < 5; ++test) {
     size_t state = env.reset();
@@ -116,7 +116,7 @@ int main() {
     float total_reward = 0.0f;
     
     while (!env.is_done() && steps < max_steps) {
-      size_t action = rl_agent_choose_action(agent, state);
+      size_t action = rl_choose_agent_action(agent, state);
       env.step(action);
       state = env.get_state();
       total_reward += env.get_reward();
@@ -128,11 +128,11 @@ int main() {
   }
   
   std::cout << "\nQ-table..." << std::endl;
-  RL_QTable* qtable = rl_agent_get_qtable(agent);
-  std::cout << "Example: Q(0, 3) = " << rl_qtable_get(qtable, 0, 3) << std::endl;
+  RL_QTable* qtable = rl_get_agent_qtable(agent);
+  std::cout << "Example: Q(0, 3) = " << rl_get_qtable(qtable, 0, 3) << std::endl;
   
-  rl_agent_free(agent);
-  rl_qtable_free(qtable);
+  rl_free_agent(agent);
+  rl_free_qtable(qtable);
   
   return 0;
 }
