@@ -11,7 +11,7 @@ namespace NNW.Core.RL
 
         protected override bool ReleaseHandle()
         {
-            RLInterop.rl_free_qtable(handle);
+            // RLInterop.rl_free_qtable(handle); // now is not necessary, because QLearningAgent own the QTable
             return true;
         }
     }

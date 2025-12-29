@@ -12,7 +12,8 @@ class Program
             Console.WriteLine("Choose an example to execute:");
             Console.WriteLine("  AND  - Logic Gate AND");
             Console.WriteLine("  XOR  - Logic Gate XOR");
-            Console.Write("Type AND or XOR (or run as an arg): ");
+            Console.WriteLine("  QT   - Q-Table");
+            Console.Write("Type QT, AND or XOR (or run as an arg): ");
             choice = Console.ReadLine()?.Trim().ToUpperInvariant() ?? string.Empty;
         }
 
@@ -26,8 +27,11 @@ class Program
                 case "XOR":
                     XorExample.Run();
                     break;
+                case "QT":
+                    QLearningExample.Run();
+                    break;
                 default:
-                    Console.WriteLine("Invalid Option. Use AND or XOR.");
+                    Console.WriteLine("Invalid Option. Use QT, AND or XOR.");
                     break;
             }
         }
