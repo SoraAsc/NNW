@@ -4,7 +4,7 @@ using NNW.Core.RL;
 
 namespace Examples {
     public class QLearningExample {
-        class GridWorld : IEnvironment
+        class GridWorld : IEnvironment<QLearningAgent>
         {
             private uint _width, _height;
             private uint _currentState;
@@ -16,10 +16,10 @@ namespace Examples {
             {
                 _width = width;
                 _height = height;
-                Reset();
+                ResetEnv();
             }
             
-            public bool Step(uint action)
+            public void Step(QLearningAgent _, uint action)
             {
                 uint x = _currentState % _width;
                 uint y = _currentState / _width;
@@ -38,25 +38,22 @@ namespace Examples {
                 if (_currentState == _goalState) {
                     _lastReward = 10.0f;
                     _done = true;
-                } else _lastReward = -0.1f;
-                
-                return _done;
+                } else _lastReward = -0.1f;   
             }
             
-            public uint Reset()
+            public void ResetEnv()
             {
                 _currentState = 0;
                 _goalState = (_height - 1) * _width + (_width - 1);
                 _done = false;
                 _lastReward = 0.0f;
-                return _currentState;
             }
             
-            public uint GetState() => _currentState;
-            public float GetReward() => _lastReward;
+            public uint GetState(QLearningAgent _) => _currentState;
+            public float GetReward(QLearningAgent _) => _lastReward;
             public uint GetNumStates() => _width * _height;
             public uint GetNumActions() => 4;
-            public bool IsDone() => _done;
+            public bool IsEnvDone() => _done;
         }
         
         public static void Run()
@@ -80,19 +77,20 @@ namespace Examples {
 
             for (uint episode = 0; episode < numEpisodes; ++episode)
             {
-                uint state = env.Reset();
+                env.ResetEnv();
+                uint state = env.GetState(agent);
                 uint steps = 0;
                 float episodeReward = 0.0f;
 
-                while (!env.IsDone() && steps < maxSteps)
+                while (!env.IsEnvDone() && steps < maxSteps)
                 {
                     uint action = agent.ChooseAction(state);
 
-                    env.Step(action);
+                    env.Step(agent, action);
 
-                    uint nextState = env.GetState();
-                    float reward = env.GetReward();
-                    bool done = env.IsDone();
+                    uint nextState = env.GetState(agent);
+                    float reward = env.GetReward(agent);
+                    bool done = env.IsEnvDone();
 
                     agent.Update(state, action, reward, nextState, done);
 
@@ -113,16 +111,17 @@ namespace Examples {
 
             for (int test = 0; test < 5; ++test)
             {
-                uint state = env.Reset();
-                int steps = 0;
+                env.ResetEnv();
+                uint state = env.GetState(agent);
+                uint steps = 0;
                 float totalReward = 0.0f;
 
-                while (!env.IsDone() && steps < maxSteps)
+                while (!env.IsEnvDone() && steps < maxSteps)
                 {
                     uint action = agent.ChooseAction(state);
-                    env.Step(action);
-                    state = env.GetState();
-                    totalReward += env.GetReward();
+                    env.Step(agent, action);
+                    state = env.GetState(agent);
+                    totalReward += env.GetReward(agent);
                     steps++;
                 }
 

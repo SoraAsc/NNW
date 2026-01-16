@@ -18,14 +18,6 @@ namespace NNW.Core.RL
             NumActions = numActions;
         }
 
-        // public static QTable Create(uint statesNum, uint actionsNum)
-        // {
-        //     IntPtr ptr = RLInterop.rl_create_qtable(new UIntPtr(statesNum), new UIntPtr(actionsNum));
-        //     if (ptr == IntPtr.Zero)
-        //         throw new InvalidOperationException("Failed to create native QTable.");
-        //     return new QTable(new NativeQTableHandle(ptr), statesNum, actionsNum);
-        // }
-
         internal static QTable FromNative(IntPtr ptr, uint statesNum, uint actionsNum)
         {
             if (ptr == IntPtr.Zero) throw new ArgumentNullException(nameof(ptr));

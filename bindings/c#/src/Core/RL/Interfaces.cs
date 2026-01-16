@@ -1,13 +1,13 @@
 namespace NNW.Core.RL
 {
-    public interface IEnvironment
+    public interface IEnvironment<TAgent>
     {
-        bool Step(uint action);
-        uint Reset();
-        uint GetState();
-        float GetReward();
+        void Step(TAgent agent, uint action);
+        uint GetState(TAgent agent);
+        float GetReward(TAgent agent);
+        bool IsEnvDone();
+        void ResetEnv();
         uint GetNumStates();
         uint GetNumActions();
-        bool IsDone();
     }
 }
