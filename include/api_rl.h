@@ -30,6 +30,15 @@ extern "C" {
   
   // Policy management
   void rl_set_agent_policy(RL_Agent* agent, RL_PolicyType policy_type, float epsilon);
+
+  typedef enum { EPS_DECAY_LINEAR = 0, EPS_DECAY_EXPONENTIAL = 1 } EpsilonDecayType;
+
+  // Epsilon decay / scheduler per-agent
+  bool rl_set_agent_epsilon_decay(RL_Agent* agent, double start, double min, double rate, EpsilonDecayType type, int per_step);
+  void rl_update_agent_epsilon_step(RL_Agent* agent);
+  void rl_update_agent_epsilon_episode(RL_Agent* agent);
+  double rl_get_agent_epsilon(RL_Agent* agent);
+  void rl_reset_agent_epsilon(RL_Agent* agent);
   
   // Getters/Setters
   float rl_get_agent_learning_rate(RL_Agent* agent);

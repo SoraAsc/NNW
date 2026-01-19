@@ -73,6 +73,36 @@ namespace NNW.Core.RL
             if (_disposed) throw new ObjectDisposedException("QLearningAgent");
             RLInterop.rl_set_agent_policy(_handle.DangerousGetHandle(), type, epsilon);
         }
+
+        public bool SetEpsilonDecay(double start, double min, double rate, EpsilonDecayType type, bool perStep = true)
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            return RLInterop.rl_set_agent_epsilon_decay(_handle.DangerousGetHandle(), start, min, rate, (int)type, perStep ? 1 : 0);
+        }
+
+        public void UpdateEpsilonStep()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            RLInterop.rl_update_agent_epsilon_step(_handle.DangerousGetHandle());
+        }
+
+        public void UpdateEpsilonEpisode()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            RLInterop.rl_update_agent_epsilon_episode(_handle.DangerousGetHandle());
+        }
+
+        public double GetEpsilon()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            return RLInterop.rl_get_agent_epsilon(_handle.DangerousGetHandle());
+        }
+
+        public void ResetEpsilon()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            RLInterop.rl_reset_agent_epsilon(_handle.DangerousGetHandle());
+        }
         
         public float GetLearningRate()
         {

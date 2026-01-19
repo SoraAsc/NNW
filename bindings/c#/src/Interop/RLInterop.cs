@@ -61,5 +61,21 @@ namespace NNW.Interop
         
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rl_get_agent_qtable(IntPtr agent);
+        
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool rl_set_agent_epsilon_decay(IntPtr agent, double start, double min, double rate, int type, int per_step);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_update_agent_epsilon_step(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_update_agent_epsilon_episode(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern double rl_get_agent_epsilon(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_reset_agent_epsilon(IntPtr agent);
     }
 }

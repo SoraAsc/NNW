@@ -68,7 +68,9 @@ namespace Examples {
                 0.1f,   // learning rate
                 0.99f   // discount factor
             );
-            agent.SetPolicy(PolicyType.EpsilonGreedy, 0.1f);
+            // Use epsilon-greedy with exponential decay (per-step)
+            agent.SetPolicy(PolicyType.EpsilonGreedy, 1.0f);
+            agent.SetEpsilonDecay(1.0, 0.01, 0.0005, EpsilonDecayType.Exponential, true);
 
             uint numEpisodes = 100;
             uint maxSteps = 100;
@@ -94,6 +96,9 @@ namespace Examples {
 
                     agent.Update(state, action, reward, nextState, done);
 
+                    // update epsilon per step
+                    agent.UpdateEpsilonStep();
+
                     episodeReward += reward;
                     state = nextState;
                     steps++;
@@ -102,7 +107,7 @@ namespace Examples {
                 if ((episode + 1) % 10 == 0)
                 {
                     Console.WriteLine($"Episode {episode + 1}/{numEpisodes} | " +
-                                    $"Reward: {episodeReward:F1} | Steps: {steps}");
+                                    $"Reward: {episodeReward:F1} | Steps: {steps} | Epsilon: {agent.GetEpsilon():F4}");
                 }
             }
 

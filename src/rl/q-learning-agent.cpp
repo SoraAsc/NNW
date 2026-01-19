@@ -1,6 +1,7 @@
 #include "rl/q-learning-agent.h"
 #include <algorithm>
 #include <cmath>
+#include "rl/policy.h"
 
 QLearningAgent::QLearningAgent(size_t states_num,
                                size_t actions_num,
@@ -41,4 +42,17 @@ float QLearningAgent::get_max_qvalue(size_t state) {
   }
   
   return max_q;
+}
+
+void QLearningAgent::set_epsilon(float epsilon) {
+  if (!m_policy) return;
+  if (auto eps = dynamic_cast<EpsilonGreedyPolicy*>(m_policy.get()))
+    eps->set_epsilon(epsilon);
+}
+
+float QLearningAgent::get_epsilon() const {
+  if (!m_policy) return 0.0f;
+  if (auto eps = dynamic_cast<const EpsilonGreedyPolicy*>(m_policy.get()))
+    return eps->get_epsilon();
+  return 0.0f;
 }

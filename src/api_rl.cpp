@@ -4,6 +4,13 @@
 #include "rl/policy.h"
 #include <memory>
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <random>
+
+// Helper to clamp values
+template<typename T>
+static T clamp_val(T v, T lo, T hi) { return std::min(hi, std::max(lo, v)); }
 
 // Q-Table Wrapper
 
@@ -42,6 +49,16 @@ size_t rl_get_qtable_actions(const RL_QTable* qtable) {
 
 struct RL_Agent {
   std::unique_ptr<QLearningAgent> impl;
+
+  // Epsilon scheduler state (per-agent)
+  double eps_start = 0.1;
+  double eps_min = 0.0;
+  double eps_rate = 0.0;
+  int eps_type = EPS_DECAY_LINEAR;
+  bool eps_per_step = true;
+  uint64_t eps_steps = 0;
+  uint64_t eps_episodes = 0;
+  double current_eps = 0.1;
 };
 
 RL_Agent* rl_create_agent(size_t states_num, size_t actions_num,
@@ -74,6 +91,71 @@ void rl_set_agent_policy(RL_Agent* agent, RL_PolicyType policy_type, float epsil
     policy = std::make_unique<EpsilonGreedyPolicy>(epsilon);
   
   agent->impl->set_policy(std::move(policy));
+  // update wrapper epsilon state
+  agent->current_eps = clamp_val<double>(epsilon, 0.0, 1.0);
+}
+
+bool rl_set_agent_epsilon_decay(RL_Agent* agent, double start, double min, double rate, EpsilonDecayType type, int per_step) {
+  if (!agent) return false;
+  start = clamp_val<double>(start, 0.0, 1.0);
+  min = clamp_val<double>(min, 0.0, 1.0);
+  if (min > start) std::swap(min, start);
+  if (rate < 0.0) rate = 0.0;
+
+  agent->eps_start = start;
+  agent->eps_min = min;
+  agent->eps_rate = rate;
+  agent->eps_type = static_cast<int>(type);
+  agent->eps_per_step = (per_step != 0);
+  agent->eps_steps = 0;
+  agent->eps_episodes = 0;
+  agent->current_eps = start;
+  // push to policy if available
+  agent->impl->set_epsilon(static_cast<float>(agent->current_eps));
+  return true;
+}
+
+static double compute_epsilon(double start, double min, double rate, int type, uint64_t t) {
+  if (type == EPS_DECAY_LINEAR) {
+    double v = start - rate * static_cast<double>(t);
+    if (v < min) v = min;
+    return v;
+  } else {
+    double v = min + (start - min) * std::exp(-rate * static_cast<double>(t));
+    if (v < min) v = min;
+    return v;
+  }
+}
+
+void rl_update_agent_epsilon_step(RL_Agent* agent) {
+  if (!agent) return;
+  if (!agent->eps_per_step) return;
+  agent->eps_steps++;
+  double eps = compute_epsilon(agent->eps_start, agent->eps_min, agent->eps_rate, agent->eps_type, agent->eps_steps);
+  agent->current_eps = clamp_val<double>(eps, 0.0, 1.0);
+  agent->impl->set_epsilon(static_cast<float>(agent->current_eps));
+}
+
+void rl_update_agent_epsilon_episode(RL_Agent* agent) {
+  if (!agent) return;
+  if (agent->eps_per_step) return;
+  agent->eps_episodes++;
+  double eps = compute_epsilon(agent->eps_start, agent->eps_min, agent->eps_rate, agent->eps_type, agent->eps_episodes);
+  agent->current_eps = clamp_val<double>(eps, 0.0, 1.0);
+  agent->impl->set_epsilon(static_cast<float>(agent->current_eps));
+}
+
+double rl_get_agent_epsilon(RL_Agent* agent) {
+  if (!agent) return 0.0;
+  return agent->current_eps;
+}
+
+void rl_reset_agent_epsilon(RL_Agent* agent) {
+  if (!agent) return;
+  agent->eps_steps = 0;
+  agent->eps_episodes = 0;
+  agent->current_eps = agent->eps_start;
+  agent->impl->set_epsilon(static_cast<float>(agent->current_eps));
 }
 
 float rl_get_agent_learning_rate(RL_Agent* agent) {

@@ -73,7 +73,8 @@ int main() {
     0.99f   // discount factor
   );
   
-  rl_set_agent_policy(agent, RL_POLICY_EPSILON_GREEDY, 0.1f);
+  rl_set_agent_policy(agent, RL_POLICY_EPSILON_GREEDY, 1.0f);
+  rl_set_agent_epsilon_decay(agent, 1.0, 0.01, 0.0005, EPS_DECAY_EXPONENTIAL, 1);
   
   int num_episodes = 100;
   int max_steps = 100;
@@ -95,6 +96,8 @@ int main() {
       int done = env.is_done() ? 1 : 0;
       
       rl_update_agent(agent, state, action, reward, next_state, done);
+      // update epsilon scheduler per step
+      rl_update_agent_epsilon_step(agent);
       
       episode_reward += reward;
       state = next_state;
@@ -103,7 +106,8 @@ int main() {
     
     if ((episode + 1) % 10 == 0) {
       std::cout << "Episode " << (episode + 1) << "/" << num_episodes 
-                << " | Reward: " << episode_reward << " | Steps: " << steps << std::endl;
+                << " | Reward: " << episode_reward << " | Steps: " << steps
+                << " | Epsilon: " << rl_get_agent_epsilon(agent) << std::endl;
     }
   }
   

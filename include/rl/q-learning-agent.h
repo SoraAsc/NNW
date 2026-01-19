@@ -26,6 +26,10 @@ public:
   void set_discount_factor(float gamma) { m_discount_factor = gamma; }
   void set_policy(std::unique_ptr<Policy> policy) { m_policy = std::move(policy); }
 
+  // Epsilon helpers - effective only if current policy is EpsilonGreedyPolicy
+  void set_epsilon(float epsilon);
+  float get_epsilon() const;
+
 private:
   std::unique_ptr<QTable> m_q_table;
   std::unique_ptr<Policy> m_policy;
