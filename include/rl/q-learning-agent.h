@@ -15,6 +15,10 @@ public:
   size_t choose_action(size_t state);
   
   void update(size_t state, size_t action, float reward, size_t next_state, bool done = false);
+
+  // Training / evaluation mode: when in evaluation (training=false), update() is a no-op
+  void set_training(bool training) { m_training = training; }
+  bool is_training() const { return m_training; }
   
   // Getters
   float get_learning_rate() const { return m_learning_rate; }
@@ -36,6 +40,7 @@ private:
   float m_learning_rate;
   float m_discount_factor;
   size_t m_actions_num;
+  bool m_training = true;
   
   float get_max_qvalue(size_t state);
 };

@@ -158,6 +158,16 @@ void rl_reset_agent_epsilon(RL_Agent* agent) {
   agent->impl->set_epsilon(static_cast<float>(agent->current_eps));
 }
 
+void rl_set_agent_training(RL_Agent* agent, int training) {
+  if (!agent) return;
+  agent->impl->set_training(training != 0);
+}
+
+int rl_get_agent_training(RL_Agent* agent) {
+  if (!agent) return 0;
+  return agent->impl->is_training() ? 1 : 0;
+}
+
 float rl_get_agent_learning_rate(RL_Agent* agent) {
   return agent->impl->get_learning_rate();
 }

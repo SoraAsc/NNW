@@ -111,8 +111,8 @@ namespace Examples {
                 }
             }
 
-            Console.WriteLine("\nUsing Greedy Policy...\n");
-            agent.SetPolicy(PolicyType.Greedy, 0.0f);
+            Console.WriteLine("\nTesting...\n");
+            agent.SetTraining(false);
 
             for (int test = 0; test < 5; ++test)
             {

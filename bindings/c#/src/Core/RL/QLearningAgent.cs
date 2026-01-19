@@ -103,6 +103,18 @@ namespace NNW.Core.RL
             if (_disposed) throw new ObjectDisposedException("QLearningAgent");
             RLInterop.rl_reset_agent_epsilon(_handle.DangerousGetHandle());
         }
+
+        public void SetTraining(bool training)
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            RLInterop.rl_set_agent_training(_handle.DangerousGetHandle(), training ? 1 : 0);
+        }
+
+        public bool IsTraining()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            return RLInterop.rl_get_agent_training(_handle.DangerousGetHandle()) != 0;
+        }
         
         public float GetLearningRate()
         {

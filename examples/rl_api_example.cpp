@@ -111,8 +111,8 @@ int main() {
     }
   }
   
-  std::cout << "\nTesting with Greedy Policy..." << std::endl;
-  rl_set_agent_policy(agent, RL_POLICY_GREEDY, 0.0f);
+  std::cout << "\nTesting..." << std::endl;
+  rl_set_agent_training(agent, 0);
   
   for (int test = 0; test < 5; ++test) {
     size_t state = env.reset();

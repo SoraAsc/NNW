@@ -39,6 +39,10 @@ extern "C" {
   void rl_update_agent_epsilon_episode(RL_Agent* agent);
   double rl_get_agent_epsilon(RL_Agent* agent);
   void rl_reset_agent_epsilon(RL_Agent* agent);
+
+  // Training / evaluation mode: when training=0 updates are skipped
+  void rl_set_agent_training(RL_Agent* agent, int training);
+  int rl_get_agent_training(RL_Agent* agent);
   
   // Getters/Setters
   float rl_get_agent_learning_rate(RL_Agent* agent);

@@ -77,5 +77,11 @@ namespace NNW.Interop
 
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern void rl_reset_agent_epsilon(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_set_agent_training(IntPtr agent, int training);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int rl_get_agent_training(IntPtr agent);
     }
 }
