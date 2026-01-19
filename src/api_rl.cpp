@@ -91,7 +91,6 @@ void rl_set_agent_policy(RL_Agent* agent, RL_PolicyType policy_type, float epsil
     policy = std::make_unique<EpsilonGreedyPolicy>(epsilon);
   
   agent->impl->set_policy(std::move(policy));
-  // update wrapper epsilon state
   agent->current_eps = clamp_val<double>(epsilon, 0.0, 1.0);
 }
 
@@ -110,7 +109,6 @@ bool rl_set_agent_epsilon_decay(RL_Agent* agent, double start, double min, doubl
   agent->eps_steps = 0;
   agent->eps_episodes = 0;
   agent->current_eps = start;
-  // push to policy if available
   agent->impl->set_epsilon(static_cast<float>(agent->current_eps));
   return true;
 }
@@ -199,4 +197,44 @@ RL_QTable* rl_get_agent_qtable(RL_Agent* agent) {
   }
   
   return qtable;
+}
+
+void rl_set_agent_reward_clip(RL_Agent* agent, int enabled, float min_val, float max_val) {
+  if (!agent) return;
+  agent->impl->set_reward_clip(enabled != 0, min_val, max_val);
+}
+
+void rl_set_agent_reward_normalization(RL_Agent* agent, int enabled, float scale) {
+  if (!agent) return;
+  agent->impl->set_reward_normalization(enabled != 0, scale);
+}
+
+double rl_get_agent_average_reward(RL_Agent* agent) {
+  if (!agent) return 0.0;
+  return agent->impl->get_average_reward();
+}
+
+double rl_get_agent_last_reward(RL_Agent* agent) {
+  if (!agent) return 0.0;
+  return agent->impl->get_last_episode_reward();
+}
+
+size_t rl_get_agent_episode_count(RL_Agent* agent) {
+  if (!agent) return 0;
+  return agent->impl->get_episode_count();
+}
+
+size_t rl_get_agent_last_episode_length(RL_Agent* agent) {
+  if (!agent) return 0;
+  return agent->impl->get_last_episode_length();
+}
+
+double rl_get_agent_average_episode_length(RL_Agent* agent) {
+  if (!agent) return 0.0;
+  return agent->impl->get_average_episode_length();
+}
+
+void rl_notify_agent_episode_end(RL_Agent* agent) {
+  if (!agent) return;
+  agent->impl->notify_episode_end();
 }

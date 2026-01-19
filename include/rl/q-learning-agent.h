@@ -24,6 +24,18 @@ public:
   float get_learning_rate() const { return m_learning_rate; }
   float get_discount_factor() const { return m_discount_factor; }
   QTable* get_qtable() { return m_q_table.get(); }
+
+  // Reward clipping / normalization
+  void set_reward_clip(bool enabled, float min_val, float max_val);
+  void set_reward_normalization(bool enabled, float scale);
+  // Telemetry / logging
+  void notify_episode_end();
+  double get_average_reward() const;
+  double get_last_episode_reward() const;
+  size_t get_episode_count() const;
+  // Episode length telemetry
+  size_t get_last_episode_length() const;
+  double get_average_episode_length() const;
   
   // Setters
   void set_learning_rate(float lr) { m_learning_rate = lr; }
@@ -41,6 +53,27 @@ private:
   float m_discount_factor;
   size_t m_actions_num;
   bool m_training = true;
+  // Reward handling
+  bool m_reward_clip_enabled = false;
+  float m_reward_clip_min = -1000.0f;
+  float m_reward_clip_max = 1000.0f;
+  bool m_reward_normalize_enabled = false;
+  float m_reward_normalize_scale = 1.0f;
+
+  struct Telemetry {
+    double cumulative_reward = 0.0;
+    size_t episode_steps = 0;
+    size_t episodes = 0;
+    double total_reward_all_episodes = 0.0;
+    double average_reward = 0.0;
+    double last_episode_reward = 0.0;
+    bool in_episode = false;
+    // episode length
+    size_t last_episode_length = 0;
+    double total_steps_all_episodes = 0.0;
+    double average_episode_length = 0.0;
+  } m_telemetry;
   
   float get_max_qvalue(size_t state);
+  void notify_step_reward(float reward);
 };

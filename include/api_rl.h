@@ -52,4 +52,17 @@ extern "C" {
   
   // Access internal Q-table
   RL_QTable* rl_get_agent_qtable(RL_Agent* agent);
+
+  // Reward handling
+  void rl_set_agent_reward_clip(RL_Agent* agent, int enabled, float min_val, float max_val);
+  void rl_set_agent_reward_normalization(RL_Agent* agent, int enabled, float scale);
+
+  double rl_get_agent_average_reward(RL_Agent* agent);
+  double rl_get_agent_last_reward(RL_Agent* agent);
+  size_t rl_get_agent_episode_count(RL_Agent* agent);
+  // Episode length
+  size_t rl_get_agent_last_episode_length(RL_Agent* agent);
+  double rl_get_agent_average_episode_length(RL_Agent* agent);
+  // Manually finalize an episode (call if episode ended due to external stop)
+  void rl_notify_agent_episode_end(RL_Agent* agent);
 }

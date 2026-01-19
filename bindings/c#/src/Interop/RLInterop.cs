@@ -61,6 +61,30 @@ namespace NNW.Interop
         
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rl_get_agent_qtable(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_set_agent_reward_clip(IntPtr agent, int enabled, float min_val, float max_val);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_set_agent_reward_normalization(IntPtr agent, int enabled, float scale);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern double rl_get_agent_average_reward(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern double rl_get_agent_last_reward(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr rl_get_agent_episode_count(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr rl_get_agent_last_episode_length(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern double rl_get_agent_average_episode_length(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void rl_notify_agent_episode_end(IntPtr agent);
         
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]

@@ -68,9 +68,10 @@ namespace Examples {
                 0.1f,   // learning rate
                 0.99f   // discount factor
             );
-            // Use epsilon-greedy with exponential decay (per-step)
             agent.SetPolicy(PolicyType.EpsilonGreedy, 1.0f);
             agent.SetEpsilonDecay(1.0, 0.01, 0.0005, EpsilonDecayType.Exponential, true);
+            agent.SetRewardClip(true, -10.0f, 10.0f);
+            agent.SetRewardNormalization(false, 1.0f);
 
             uint numEpisodes = 100;
             uint maxSteps = 100;
@@ -104,10 +105,20 @@ namespace Examples {
                     steps++;
                 }
 
+                // If the environment didn't signal done (e.g. reached max steps), finalize
+                if (!env.IsEnvDone()) agent.NotifyEpisodeEnd();
+
                 if ((episode + 1) % 10 == 0)
                 {
+                    double avgReward = agent.GetAverageReward();
+                    double lastReward = agent.GetLastEpisodeReward();
+                    ulong episodesCount = agent.GetEpisodeCount();
+                    ulong lastLen = agent.GetLastEpisodeLength();
+                    double avgLen = agent.GetAverageEpisodeLength();
+
                     Console.WriteLine($"Episode {episode + 1}/{numEpisodes} | " +
                                     $"Reward: {episodeReward:F1} | Steps: {steps} | Epsilon: {agent.GetEpsilon():F4}");
+                    Console.WriteLine($"  Telemetry: episodes={episodesCount} last_reward={lastReward:F2} avg_reward={avgReward:F2} last_len={lastLen} avg_len={avgLen:F2}");
                 }
             }
 

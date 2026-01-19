@@ -27,9 +27,7 @@ public:
     if (m_current_state == m_goal_state) {
       m_last_reward = 10.0f;
       m_done = true;
-    } else {
-      m_last_reward = -0.1f;
-    }
+    } else m_last_reward = -0.1f;
     
     return m_done;
   }
@@ -75,6 +73,9 @@ int main() {
   
   rl_set_agent_policy(agent, RL_POLICY_EPSILON_GREEDY, 1.0f);
   rl_set_agent_epsilon_decay(agent, 1.0, 0.01, 0.0005, EPS_DECAY_EXPONENTIAL, 1);
+
+  rl_set_agent_reward_clip(agent, 1, -10.0f, 10.0f);
+  rl_set_agent_reward_normalization(agent, 0, 1.0f);
   
   int num_episodes = 100;
   int max_steps = 100;
@@ -103,11 +104,22 @@ int main() {
       state = next_state;
       steps++;
     }
+
+    // Ensure episode finalized even if episode ended due to max_steps (not env.is_done())
+    if (!env.is_done()) rl_notify_agent_episode_end(agent);
     
     if ((episode + 1) % 10 == 0) {
       std::cout << "Episode " << (episode + 1) << "/" << num_episodes 
                 << " | Reward: " << episode_reward << " | Steps: " << steps
-                << " | Epsilon: " << rl_get_agent_epsilon(agent) << std::endl;
+                << " | Epsilon: " << rl_get_agent_epsilon(agent);
+
+      double avg = rl_get_agent_average_reward(agent);
+      double last = rl_get_agent_last_reward(agent);
+      size_t episodes = rl_get_agent_episode_count(agent);
+      size_t last_len = rl_get_agent_last_episode_length(agent);
+      double avg_len = rl_get_agent_average_episode_length(agent);
+      std::cout << " | Telemetry: episodes=" << episodes << " last_reward=" << last << " avg_reward=" << avg
+                << " last_len=" << last_len << " avg_len=" << avg_len << std::endl;
     }
   }
   

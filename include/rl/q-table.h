@@ -8,6 +8,7 @@ public:
 
   float get(size_t state, size_t action);
   void set(size_t state, size_t action, float value);
+  bool is_valid_index(size_t state, size_t action) const;
   
   size_t get_states_num() const { return states_num; }
   size_t get_actions_num() const { return actions_num; }

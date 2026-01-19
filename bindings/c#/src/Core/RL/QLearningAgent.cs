@@ -74,6 +74,56 @@ namespace NNW.Core.RL
             RLInterop.rl_set_agent_policy(_handle.DangerousGetHandle(), type, epsilon);
         }
 
+        public void SetRewardClip(bool enabled, float minVal, float maxVal)
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            RLInterop.rl_set_agent_reward_clip(_handle.DangerousGetHandle(), enabled ? 1 : 0, minVal, maxVal);
+        }
+
+        public void SetRewardNormalization(bool enabled, float scale)
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            RLInterop.rl_set_agent_reward_normalization(_handle.DangerousGetHandle(), enabled ? 1 : 0, scale);
+        }
+
+        public double GetAverageReward()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            return RLInterop.rl_get_agent_average_reward(_handle.DangerousGetHandle());
+        }
+
+        public double GetLastEpisodeReward()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            return RLInterop.rl_get_agent_last_reward(_handle.DangerousGetHandle());
+        }
+
+        public ulong GetEpisodeCount()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            UIntPtr v = RLInterop.rl_get_agent_episode_count(_handle.DangerousGetHandle());
+            return v.ToUInt64();
+        }
+
+        public ulong GetLastEpisodeLength()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            UIntPtr v = RLInterop.rl_get_agent_last_episode_length(_handle.DangerousGetHandle());
+            return v.ToUInt64();
+        }
+
+        public double GetAverageEpisodeLength()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            return RLInterop.rl_get_agent_average_episode_length(_handle.DangerousGetHandle());
+        }
+
+        public void NotifyEpisodeEnd()
+        {
+            if (_disposed) throw new ObjectDisposedException("QLearningAgent");
+            RLInterop.rl_notify_agent_episode_end(_handle.DangerousGetHandle());
+        }
+
         public bool SetEpsilonDecay(double start, double min, double rate, EpsilonDecayType type, bool perStep = true)
         {
             if (_disposed) throw new ObjectDisposedException("QLearningAgent");
