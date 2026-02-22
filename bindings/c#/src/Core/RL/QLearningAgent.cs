@@ -6,7 +6,6 @@ namespace NNW.Core.RL
     public sealed class QLearningAgent : IDisposable
     {
         private NativeQLearningAgentHandle _handle;
-        private readonly QTable _qtable;
         private bool _disposed;
 
         public uint NumStates { get; private set; }
@@ -18,8 +17,6 @@ namespace NNW.Core.RL
             NumStates = numStates;
             NumActions = numActions;
             SetPolicy(PolicyType.EpsilonGreedy, 0.1f); // Default Policy
-
-            _qtable = InitializeQTableInstance(numStates, numActions);            
         }
 
         private QTable InitializeQTableInstance(uint numStates, uint numActions)
@@ -193,7 +190,7 @@ namespace NNW.Core.RL
         public QTable GetQTable()
         {
             if (_disposed) throw new ObjectDisposedException("QLearningAgent");
-            return _qtable;
+            return InitializeQTableInstance(NumStates, NumActions);
         }
 
         internal NativeQLearningAgentHandle NativeHandle => _handle;

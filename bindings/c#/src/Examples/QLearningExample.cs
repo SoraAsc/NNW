@@ -150,6 +150,10 @@ namespace Examples {
             Console.WriteLine($"Learning Rate: {agent.GetLearningRate()}");
             Console.WriteLine($"Discount Factor: {agent.GetDiscountFactor()}");
             
+            // Inspect Q-table value before saving
+            var qtBefore = agent.GetQTable();
+            Console.WriteLine($"Q(0,3) before save = {qtBefore.Get(0, 3)}");
+
             // Save agent
             var savePath = "agent_saved.bin";
             if (agent.Save(savePath)) Console.WriteLine($"Agent saved to {savePath}");
