@@ -46,6 +46,16 @@ public:
   void set_epsilon(float epsilon);
   float get_epsilon() const;
 
+  // Expose current policy type
+  int get_policy_type() const;
+
+  // Reward clip / normalization getters
+  bool get_reward_clip_enabled() const { return m_reward_clip_enabled; }
+  float get_reward_clip_min() const { return m_reward_clip_min; }
+  float get_reward_clip_max() const { return m_reward_clip_max; }
+  bool get_reward_normalize_enabled() const { return m_reward_normalize_enabled; }
+  float get_reward_normalize_scale() const { return m_reward_normalize_scale; }
+
 private:
   std::unique_ptr<QTable> m_q_table;
   std::unique_ptr<Policy> m_policy;

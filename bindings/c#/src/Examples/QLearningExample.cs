@@ -149,6 +149,24 @@ namespace Examples {
             Console.WriteLine($"Number of Actions: {agent.NumActions}");
             Console.WriteLine($"Learning Rate: {agent.GetLearningRate()}");
             Console.WriteLine($"Discount Factor: {agent.GetDiscountFactor()}");
+            
+            // Save agent
+            var savePath = "agent_saved.bin";
+            if (agent.Save(savePath)) Console.WriteLine($"Agent saved to {savePath}");
+            else Console.WriteLine($"Failed to save agent to {savePath}");
+
+            // Load agent back and inspect Q-table
+            try
+            {
+                using var loaded = QLearningAgent.Load(savePath);
+                Console.WriteLine("Loaded agent from disk.");
+                var qt = loaded.GetQTable();
+                Console.WriteLine($"Q(0,3) after load = {qt.Get(0, 3)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load agent: {ex.Message}");
+            }
         }
     }
 }

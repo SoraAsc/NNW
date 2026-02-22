@@ -98,6 +98,12 @@ float QLearningAgent::get_epsilon() const {
   return 0.0f;
 }
 
+int QLearningAgent::get_policy_type() const {
+  if (!m_policy) return 0; // RL_POLICY_GREEDY
+  if (dynamic_cast<const EpsilonGreedyPolicy*>(m_policy.get())) return 1; // RL_POLICY_EPSILON_GREEDY
+  return 0;
+}
+
 // ---- Reward clipping / normalization ----
 void QLearningAgent::set_reward_clip(bool enabled, float min_val, float max_val) {
   m_reward_clip_enabled = enabled;

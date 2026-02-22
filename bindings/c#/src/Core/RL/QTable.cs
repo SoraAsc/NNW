@@ -38,6 +38,22 @@ namespace NNW.Core.RL
 
         internal NativeQTableHandle NativeHandle => _handle;
 
+        public bool Save(string path)
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(QTable));
+            return RLInterop.rl_qtable_save(_handle.DangerousGetHandle(), path);
+        }
+
+        public static QTable Load(string path)
+        {
+            IntPtr ptr = RLInterop.rl_qtable_load(path);
+            if (ptr == IntPtr.Zero) throw new InvalidOperationException("Failed to load QTable from path.");
+
+            UIntPtr s = RLInterop.rl_get_qtable_states(ptr);
+            UIntPtr a = RLInterop.rl_get_qtable_actions(ptr);
+            return FromNative(ptr, (uint)s.ToUInt64(), (uint)a.ToUInt64());
+        }
+
         private void ThrowIfDisposed()
         {
             if (_disposed) throw new ObjectDisposedException(nameof(QTable));

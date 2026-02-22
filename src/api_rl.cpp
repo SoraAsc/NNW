@@ -7,6 +7,8 @@
 #include <cmath>
 #include <algorithm>
 #include <random>
+#include <fstream>
+#include <string>
 
 // Helper to clamp values
 template<typename T>
@@ -237,4 +239,156 @@ double rl_get_agent_average_episode_length(RL_Agent* agent) {
 void rl_notify_agent_episode_end(RL_Agent* agent) {
   if (!agent) return;
   agent->impl->notify_episode_end();
+}
+
+// Q-Table save/load
+bool rl_qtable_save(RL_QTable* qtable, const char* path) {
+  if (!qtable || !path) return false;
+  return qtable->impl->save(std::string(path));
+}
+
+RL_QTable* rl_qtable_load(const char* path) {
+  if (!path) return nullptr;
+  // create dummy qtable and let load resize it
+  RL_QTable* q = new RL_QTable(1, 1);
+  if (!q->impl->load(std::string(path))) {
+    delete q;
+    return nullptr;
+  }
+  return q;
+}
+
+// Agent save/load (includes q-table and basic agent params)
+bool rl_save_agent(RL_Agent* agent, const char* path) {
+  if (!agent || !path) return false;
+  std::ofstream ofs(path, std::ios::binary);
+  if (!ofs) return false;
+
+  const char magic[] = "RLAGENTV1";
+  const size_t magic_len = std::strlen(magic);
+  ofs.write(magic, magic_len);
+
+  QTable* t = agent->impl->get_qtable();
+  uint64_t s = static_cast<uint64_t>(t->get_states_num());
+  uint64_t a = static_cast<uint64_t>(t->get_actions_num());
+  ofs.write(reinterpret_cast<const char*>(&s), sizeof(s));
+  ofs.write(reinterpret_cast<const char*>(&a), sizeof(a));
+
+  float lr = agent->impl->get_learning_rate();
+  float gamma = agent->impl->get_discount_factor();
+  ofs.write(reinterpret_cast<const char*>(&lr), sizeof(lr));
+  ofs.write(reinterpret_cast<const char*>(&gamma), sizeof(gamma));
+
+  int training = agent->impl->is_training() ? 1 : 0;
+  ofs.write(reinterpret_cast<const char*>(&training), sizeof(training));
+
+  // save epsilon scheduler state from wrapper
+  ofs.write(reinterpret_cast<const char*>(&agent->eps_start), sizeof(agent->eps_start));
+  ofs.write(reinterpret_cast<const char*>(&agent->eps_min), sizeof(agent->eps_min));
+  ofs.write(reinterpret_cast<const char*>(&agent->eps_rate), sizeof(agent->eps_rate));
+  ofs.write(reinterpret_cast<const char*>(&agent->eps_type), sizeof(agent->eps_type));
+  ofs.write(reinterpret_cast<const char*>(&agent->eps_per_step), sizeof(agent->eps_per_step));
+  ofs.write(reinterpret_cast<const char*>(&agent->eps_steps), sizeof(agent->eps_steps));
+  ofs.write(reinterpret_cast<const char*>(&agent->eps_episodes), sizeof(agent->eps_episodes));
+  ofs.write(reinterpret_cast<const char*>(&agent->current_eps), sizeof(agent->current_eps));
+
+  // save policy type
+  int policy_type = agent->impl->get_policy_type();
+  ofs.write(reinterpret_cast<const char*>(&policy_type), sizeof(policy_type));
+
+  // save reward clip/normalization
+  bool clip_enabled = agent->impl->get_reward_clip_enabled();
+  float clip_min = agent->impl->get_reward_clip_min();
+  float clip_max = agent->impl->get_reward_clip_max();
+  bool norm_enabled = agent->impl->get_reward_normalize_enabled();
+  float norm_scale = agent->impl->get_reward_normalize_scale();
+  ofs.write(reinterpret_cast<const char*>(&clip_enabled), sizeof(clip_enabled));
+  ofs.write(reinterpret_cast<const char*>(&clip_min), sizeof(clip_min));
+  ofs.write(reinterpret_cast<const char*>(&clip_max), sizeof(clip_max));
+  ofs.write(reinterpret_cast<const char*>(&norm_enabled), sizeof(norm_enabled));
+  ofs.write(reinterpret_cast<const char*>(&norm_scale), sizeof(norm_scale));
+
+  const auto& data = t->get_data();
+  if (!data.empty()) ofs.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(float));
+
+  return ofs.good();
+}
+
+RL_Agent* rl_load_agent(const char* path) {
+  if (!path) return nullptr;
+  std::ifstream ifs(path, std::ios::binary);
+  if (!ifs) return nullptr;
+
+  char magic[9] = {0};
+  const char expected[] = "RLAGENTV1";
+  const size_t expected_len = std::strlen(expected);
+  std::string read_magic(expected_len, '\0');
+  ifs.read(&read_magic[0], expected_len);
+  if (read_magic != expected) return nullptr;
+
+  uint64_t s = 0, a = 0;
+  ifs.read(reinterpret_cast<char*>(&s), sizeof(s));
+  ifs.read(reinterpret_cast<char*>(&a), sizeof(a));
+  if (s == 0 || a == 0) return nullptr;
+
+  float lr = 0.0f, gamma = 0.0f;
+  ifs.read(reinterpret_cast<char*>(&lr), sizeof(lr));
+  ifs.read(reinterpret_cast<char*>(&gamma), sizeof(gamma));
+
+  int training = 1;
+  ifs.read(reinterpret_cast<char*>(&training), sizeof(training));
+
+  RL_Agent* agent = rl_create_agent(static_cast<size_t>(s), static_cast<size_t>(a), lr, gamma);
+  if (!agent) return nullptr;
+
+  agent->impl->set_training(training != 0);
+
+  // read epsilon scheduler fields into wrapper
+  ifs.read(reinterpret_cast<char*>(&agent->eps_start), sizeof(agent->eps_start));
+  ifs.read(reinterpret_cast<char*>(&agent->eps_min), sizeof(agent->eps_min));
+  ifs.read(reinterpret_cast<char*>(&agent->eps_rate), sizeof(agent->eps_rate));
+  ifs.read(reinterpret_cast<char*>(&agent->eps_type), sizeof(agent->eps_type));
+  ifs.read(reinterpret_cast<char*>(&agent->eps_per_step), sizeof(agent->eps_per_step));
+  ifs.read(reinterpret_cast<char*>(&agent->eps_steps), sizeof(agent->eps_steps));
+  ifs.read(reinterpret_cast<char*>(&agent->eps_episodes), sizeof(agent->eps_episodes));
+  ifs.read(reinterpret_cast<char*>(&agent->current_eps), sizeof(agent->current_eps));
+
+  // read policy type
+  int policy_type = RL_POLICY_EPSILON_GREEDY;
+  ifs.read(reinterpret_cast<char*>(&policy_type), sizeof(policy_type));
+
+  // read reward clip/normalization
+  bool clip_enabled = false;
+  float clip_min = 0.0f, clip_max = 0.0f;
+  bool norm_enabled = false;
+  float norm_scale = 1.0f;
+  ifs.read(reinterpret_cast<char*>(&clip_enabled), sizeof(clip_enabled));
+  ifs.read(reinterpret_cast<char*>(&clip_min), sizeof(clip_min));
+  ifs.read(reinterpret_cast<char*>(&clip_max), sizeof(clip_max));
+  ifs.read(reinterpret_cast<char*>(&norm_enabled), sizeof(norm_enabled));
+  ifs.read(reinterpret_cast<char*>(&norm_scale), sizeof(norm_scale));
+
+  // apply policy and epsilon
+  rl_set_agent_policy(agent, static_cast<RL_PolicyType>(policy_type), static_cast<float>(agent->current_eps));
+  rl_set_agent_epsilon_decay(agent, agent->eps_start, agent->eps_min, agent->eps_rate, static_cast<EpsilonDecayType>(agent->eps_type), agent->eps_per_step ? 1 : 0);
+
+  // apply reward clip/normalization
+  rl_set_agent_reward_clip(agent, agent ? (clip_enabled ? 1 : 0) : 0, clip_min, clip_max);
+  rl_set_agent_reward_normalization(agent, agent ? (norm_enabled ? 1 : 0) : 0, norm_scale);
+
+  // read qtable data
+  QTable* t = agent->impl->get_qtable();
+  size_t total = t->get_states_num() * t->get_actions_num();
+  std::vector<float> data(total);
+  if (total > 0) {
+    ifs.read(reinterpret_cast<char*>(data.data()), total * sizeof(float));
+    if (!ifs) { rl_free_agent(agent); return nullptr; }
+    for (size_t i = 0; i < total; ++i) {
+      size_t state = i / t->get_actions_num();
+      size_t action = i % t->get_actions_num();
+      t->set(state, action, data[i]);
+    }
+  }
+
+  return agent;
 }

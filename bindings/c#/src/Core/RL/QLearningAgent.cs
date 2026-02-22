@@ -211,5 +211,23 @@ namespace NNW.Core.RL
             _handle = null!;
             GC.SuppressFinalize(this);
         }
+
+        public bool Save(string path)
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(QLearningAgent));
+            return RLInterop.rl_save_agent(_handle.DangerousGetHandle(), path);
+        }
+
+        public static QLearningAgent Load(string path)
+        {
+            IntPtr ptr = RLInterop.rl_load_agent(path);
+            if (ptr == IntPtr.Zero) throw new InvalidOperationException("Failed to load QLearningAgent from path.");
+
+            IntPtr qptr = RLInterop.rl_get_agent_qtable(ptr);
+            UIntPtr s = RLInterop.rl_get_qtable_states(qptr);
+            UIntPtr a = RLInterop.rl_get_qtable_actions(qptr);
+
+            return new QLearningAgent(new NativeQLearningAgentHandle(ptr), (uint)s.ToUInt64(), (uint)a.ToUInt64());
+        }
     }
 }

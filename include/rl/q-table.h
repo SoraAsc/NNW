@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 
 class QTable {
 public:
@@ -13,6 +14,10 @@ public:
   size_t get_states_num() const { return states_num; }
   size_t get_actions_num() const { return actions_num; }
   const std::vector<float>& get_data() const { return m_data; }
+
+  // Save/load table contents to disk. Returns true on success.
+  bool save(const std::string& path) const;
+  bool load(const std::string& path);
 
 private:
   std::vector<float> m_data;

@@ -147,8 +147,28 @@ int main() {
   RL_QTable* qtable = rl_get_agent_qtable(agent);
   std::cout << "Example: Q(0, 3) = " << rl_get_qtable(qtable, 0, 3) << std::endl;
   
+  // Save agent to disk
+  const char* path = "agent_saved.bin";
+  if (rl_save_agent(agent, path))
+    std::cout << "Agent saved to " << path << std::endl;
+  else
+    std::cout << "Failed to save agent to " << path << std::endl;
+
+  // Free original agent
   rl_free_agent(agent);
   rl_free_qtable(qtable);
+
+  // Load agent back
+  RL_Agent* loaded = rl_load_agent(path);
+  if (loaded) {
+    std::cout << "Loaded agent from " << path << std::endl;
+    RL_QTable* q2 = rl_get_agent_qtable(loaded);
+    std::cout << "Example: Q(0,3) after load = " << rl_get_qtable(q2, 0, 3) << std::endl;
+    rl_free_qtable(q2);
+    rl_free_agent(loaded);
+  } else {
+    std::cout << "Failed to load agent from " << path << std::endl;
+  }
   
   return 0;
 }

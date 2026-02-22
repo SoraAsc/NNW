@@ -53,6 +53,15 @@ extern "C" {
   // Access internal Q-table
   RL_QTable* rl_get_agent_qtable(RL_Agent* agent);
 
+  // Save / load Q-table
+  // Returns true on success
+  bool rl_qtable_save(RL_QTable* qtable, const char* path);
+  RL_QTable* rl_qtable_load(const char* path);
+
+  // Save / load agent (includes q-table and basic agent params)
+  bool rl_save_agent(RL_Agent* agent, const char* path);
+  RL_Agent* rl_load_agent(const char* path);
+
   // Reward handling
   void rl_set_agent_reward_clip(RL_Agent* agent, int enabled, float min_val, float max_val);
   void rl_set_agent_reward_normalization(RL_Agent* agent, int enabled, float scale);

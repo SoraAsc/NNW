@@ -31,6 +31,13 @@ namespace NNW.Interop
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern UIntPtr rl_get_qtable_actions(IntPtr qtable);
 
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool rl_qtable_save(IntPtr qtable, [MarshalAs(UnmanagedType.LPStr)] string path);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr rl_qtable_load([MarshalAs(UnmanagedType.LPStr)] string path);
+
 
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rl_create_agent(UIntPtr states_num, UIntPtr actions_num, 
@@ -107,5 +114,12 @@ namespace NNW.Interop
 
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern int rl_get_agent_training(IntPtr agent);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        public static extern bool rl_save_agent(IntPtr agent, [MarshalAs(UnmanagedType.LPStr)] string path);
+
+        [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr rl_load_agent([MarshalAs(UnmanagedType.LPStr)] string path);
     }
 }
