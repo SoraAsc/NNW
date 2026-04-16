@@ -197,7 +197,7 @@ jobs:
           path: artifacts/csharp/*.nupkg
 
   release:
-    needs: [native, wheel, csharp]
+    needs: [native, wheel, csharp, webgl]
     runs-on: ubuntu-latest
 
     steps:
