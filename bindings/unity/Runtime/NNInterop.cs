@@ -6,7 +6,11 @@ namespace NNW.Interop
 {
     internal static class NNInterop
     {
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        private const string LIB_NAME = "__Internal";
+        #else
         private const string LIB_NAME = "nn";
+        #endif
 
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr nn_create_model(UIntPtr input_dim);

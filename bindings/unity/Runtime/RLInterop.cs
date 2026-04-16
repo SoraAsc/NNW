@@ -6,7 +6,11 @@ namespace NNW.Interop
 {
     internal static class RLInterop
     {
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        private const string LIB_NAME = "__Internal";
+        #else
         private const string LIB_NAME = "nn";
+        #endif
         
         [DllImport(LIB_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr rl_create_qtable(UIntPtr states_num, UIntPtr actions_num);

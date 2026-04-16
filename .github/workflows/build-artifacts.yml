@@ -79,6 +79,42 @@ jobs:
           name: native-${{ matrix.os }}
           path: artifacts/native/*
 
+  webgl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+
+      - name: Configure CMake for WebGL
+        shell: bash
+        run: |
+          mkdir -p build-webgl
+          cd build-webgl
+          emcmake cmake .. -DBUILD_EXAMPLES=OFF
+
+      - name: Build WebGL
+        shell: bash
+        run: |
+          cd build-webgl
+          cmake --build . --config Release -- -j$(nproc)
+
+      - name: Prepare WebGL artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts/webgl
+          cp build-webgl/nn.js artifacts/webgl/
+          cp build-webgl/nn.wasm artifacts/webgl/ 2>/dev/null || true
+      - name: Upload WebGL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webgl
+          path: artifacts/webgl/*
+
   wheel:
     runs-on: ubuntu-latest
     needs: native
@@ -223,14 +259,21 @@ jobs:
           name: native-windows-latest
           path: native_artifacts/windows
 
+      - name: Download WebGL artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: webgl
+          path: native_artifacts/webgl
+
       - name: Prepare Workspace
         run: |
           rm -rf .unity-branch
-          mkdir -p .unity-branch/Runtime/Plugins
+          mkdir -p .unity-branch/Runtime/Plugins/WebGL
           cp -R bindings/unity/* .unity-branch/
           cp -R bindings/c#/src/Core .unity-branch/Runtime/
           cp -R native_artifacts/linux/* .unity-branch/Runtime/Plugins/
           cp -R native_artifacts/windows/* .unity-branch/Runtime/Plugins/
+          cp -R native_artifacts/webgl/* .unity-branch/Runtime/Plugins/WebGL/
 
       - name: Configure git
         run: |

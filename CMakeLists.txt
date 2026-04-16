@@ -13,7 +13,7 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # -----------------------
-# Neural Lib
+# Source Files
 # -----------------------
 file(GLOB LIB_SRCS
   src/*.cpp
@@ -26,13 +26,40 @@ file(GLOB LIB_SRCS
   src/rl/*.cpp
 )
 
-add_library(nn SHARED ${LIB_SRCS})
-target_include_directories(nn PUBLIC ${PROJECT_SOURCE_DIR}/include)
+# -----------------------
+# Library Target
+# -----------------------
+if(EMSCRIPTEN)
+  message(STATUS "Building for WebAssembly")
+  
+  add_executable(nn ${LIB_SRCS})
 
-set_target_properties(nn PROPERTIES
-  OUTPUT_NAME "nn"
-  PREFIX ""
-)
+  set_target_properties(nn PROPERTIES
+    OUTPUT_NAME "nn"
+    PREFIX ""
+    SUFFIX ".js"
+  )
+
+  target_link_options(nn PRIVATE
+    "-O3"
+    "-sWASM=1"
+    "-sMODULARIZE=1"
+    "-sALLOW_MEMORY_GROWTH=1"
+    "-sEXPORT_NAME=createNNModule"
+    "-sEXPORT_ALL=1"
+    "--no-entry"
+  )
+else()
+  message(STATUS "Building native library")
+
+  add_library(nn SHARED ${LIB_SRCS})
+  target_include_directories(nn PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+  set_target_properties(nn PROPERTIES
+    OUTPUT_NAME "nn"
+    PREFIX ""
+  )
+endif()
 
 # -----------------------
 # Option to build examples

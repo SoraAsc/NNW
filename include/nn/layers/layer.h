@@ -11,7 +11,7 @@ public:
   virtual std::vector<std::pair<Tensor*, Tensor*>> get_parameters() = 0;
   virtual std::string info() = 0;
   virtual std::string detailed_info() = 0;
-  ~Layer() = default;
+  virtual ~Layer() = default;
 
 };
 

@@ -23,6 +23,7 @@ void nn_add_dense(NN_Model* model, size_t units, NN_Activation act) {
   ActivationType a = ActivationType::NONE;
   switch (act)
   {
+    case NN_ACT_LINEAR: a = ActivationType::NONE; break;
     case NN_ACT_RELU: a = ActivationType::RELU; break;  
     case NN_ACT_TANH: a = ActivationType::TANH; break;
     case NN_ACT_SIGMOID: a = ActivationType::SIGMOID; break;
