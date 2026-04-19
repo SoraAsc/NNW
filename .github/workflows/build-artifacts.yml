@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -51,14 +51,10 @@ jobs:
             cmake --build . --config Release -- -j$(nproc)
           fi
 
-      - name: Prepare artifacts dir
-        shell: bash
-        run: |
-          mkdir -p artifacts/native
-
       - name: Copy and rename native library
         shell: bash
         run: |
+          mkdir -p artifacts/native
           if [ "${{ runner.os }}" = "Windows" ]; then
             LIB_EXT="dll"
           else
@@ -74,19 +70,24 @@ jobs:
           cp "$LIB_PATH" "artifacts/native/nn.${LIB_EXT}"
 
       - name: Upload native artifact (per OS)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-${{ matrix.os }}
           path: artifacts/native/*
+
+      - name: Upload native to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/native/*
 
   webgl:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Emscripten
-        uses: mymindstorm/setup-emsdk@v14
+        uses: mymindstorm/setup-emsdk@v15
         with:
           version: latest
 
@@ -109,8 +110,9 @@ jobs:
           mkdir -p artifacts/webgl
           cp build-webgl/nn.js artifacts/webgl/
           cp build-webgl/nn.wasm artifacts/webgl/ 2>/dev/null || true
+
       - name: Upload WebGL artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: webgl
           path: artifacts/webgl/*
@@ -120,16 +122,16 @@ jobs:
     needs: native
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - name: Download native libs (linux runner artifact)
-        uses: actions/download-artifact@v5
+      - name: Download native libs (Linux)
+        uses: actions/download-artifact@v8
         with:
           name: native-ubuntu-latest
           path: native_artifacts/linux
 
-      - name: Download native libs (windows runner artifact)
-        uses: actions/download-artifact@v5
+      - name: Download native libs (Windows)
+        uses: actions/download-artifact@v8
         with:
           name: native-windows-latest
           path: native_artifacts/windows
@@ -146,27 +148,32 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build -w -o ../../artifacts/python
 
-      - name: Upload wheel
-        uses: actions/upload-artifact@v4
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v7
         with:
           name: wheel
           path: artifacts/python/*.whl
+
+      - name: Upload wheel to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/python/*.whl
 
   csharp:
     runs-on: ubuntu-latest
     needs: native
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - name: Download native libs (linux runner artifact)
-        uses: actions/download-artifact@v5
+      - name: Download native libs (Linux)
+        uses: actions/download-artifact@v8
         with:
           name: native-ubuntu-latest
           path: native_artifacts/linux
 
-      - name: Download native libs (windows runner artifact)
-        uses: actions/download-artifact@v5
+      - name: Download native libs (Windows)
+        uses: actions/download-artifact@v8
         with:
           name: native-windows-latest
           path: native_artifacts/windows
@@ -191,76 +198,39 @@ jobs:
           dotnet pack -c Release -o ../../artifacts/csharp
 
       - name: Upload C# artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: csharp
           path: artifacts/csharp/*.nupkg
 
-  release:
-    needs: [native, wheel, csharp]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download wheel
-        uses: actions/download-artifact@v5
+      - name: Upload C# to GitHub Release
+        uses: softprops/action-gh-release@v3
         with:
-          name: wheel
-          path: release_artifacts/wheel
-
-      - name: Download native linux
-        uses: actions/download-artifact@v5
-        with:
-          name: native-ubuntu-latest
-          path: release_artifacts/native/linux
-
-      - name: Download native windows
-        uses: actions/download-artifact@v5
-        with:
-          name: native-windows-latest
-          path: release_artifacts/native/windows
-
-      - name: Download C# artifacts
-        uses: actions/download-artifact@v5
-        with:
-          name: csharp
-          path: release_artifacts/csharp
-
-      - name: List release files
-        run: |
-          ls -la release_artifacts || true
-          find release_artifacts -maxdepth 3 -type f -print
-
-      - name: Create GitHub Release and upload files
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            release_artifacts/wheel/*.whl
-            release_artifacts/native/**/*
-            release_artifacts/csharp/*.nupkg
+          files: artifacts/csharp/*.nupkg
 
   release-unity:
     runs-on: ubuntu-latest
     needs: [native, webgl]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Download Native artifacts (Linux)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: native-ubuntu-latest
           path: native_artifacts/linux
 
       - name: Download Native artifacts (Windows)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: native-windows-latest
           path: native_artifacts/windows
 
       - name: Download WebGL artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: webgl
           path: native_artifacts/webgl
@@ -286,8 +256,8 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name "SoraAsc"
-          git config user.email "57465032+SoraAsc@users.noreply.github.com"
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
       - name: Switch to unity branch
         run: |
