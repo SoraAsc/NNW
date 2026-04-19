@@ -275,6 +275,15 @@ jobs:
           cp -R native_artifacts/windows/* .unity-branch/Runtime/Plugins/
           cp -R native_artifacts/webgl/* .unity-branch/Runtime/Plugins/WebGL/
 
+      - name: Update package.json
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${TAG}"
+
+          sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" .unity-branch/package.json
+          sed -i "s|\"changelogUrl\": \".*\"|\"changelogUrl\": \"${RELEASE_URL}\"|" .unity-branch/package.json
+
       - name: Configure git
         run: |
           git config user.name "SoraAsc"
@@ -287,10 +296,17 @@ jobs:
 
       - name: Replace contents of branch
         run: |
+          TAG="${{ github.ref_name }}"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${TAG}"
+
           git rm -rf --cached .
           rm -rf * .github .gitignore
           cp -R .unity-branch/* .
           rm -rf .unity-branch
           git add -A
-          git commit -m "Update unity branch" || echo "No changes to commit"
+          git commit -m "Release ${TAG}
+
+          Full release (binaries, changelog): ${RELEASE_URL}" || echo "No changes to commit"
+          git tag "upm/${TAG}"
           git push origin unity --force
+          git push origin "upm/${TAG}"
