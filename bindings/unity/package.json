@@ -1,15 +1,26 @@
 {
   "name": "com.soraasc.nnw",
   "displayName": "NNW Unity",
-  "version": "0.4.0",
-  "author": "SoraAsc",
+  "version": "0.4.5",
+  "author": {
+    "name": "Marcos Dias",
+    "url": "https://github.com/SoraAsc"
+  },
+  "type": "library",
   "unity": "2019.4",
-  "description": "Unity NNW Wrapper",
+  "description": "Unity wrapper for the NNW library providing neural network inference, training utilities and Q-table reinforcement learning bindings.",
   "keywords": [
     "nnw",
     "neural network",
     "binding",
     "q-table",
     "unity"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SoraAsc/NNW.git"
+  },
+  "documentationUrl": "https://github.com/SoraAsc/NNW",
+  "changelogUrl": "https://github.com/SoraAsc/NNW/releases",
+  "dependencies": {}
 }

@@ -46,7 +46,7 @@ if(EMSCRIPTEN)
     "-sMODULARIZE=1"
     "-sALLOW_MEMORY_GROWTH=1"
     "-sEXPORT_NAME=createNNModule"
-    "-sEXPORT_ALL=1"
+    "-sEXPORTED_FUNCTIONS=_nn_create_model,_nn_free_model,_nn_add_dense,_nn_get_input_dim,_nn_get_output_dim,_nn_create_trainer,_nn_free_trainer,_nn_train_fit,_nn_predict,_rl_create_qtable,_rl_free_qtable,_rl_get_qtable,_rl_set_qtable,_rl_get_qtable_states,_rl_get_qtable_actions,_rl_create_agent,_rl_free_agent,_rl_choose_agent_action,_rl_update_agent,_rl_set_agent_policy,_rl_set_agent_epsilon_decay,_rl_update_agent_epsilon_step,_rl_update_agent_epsilon_episode,_rl_get_agent_epsilon,_rl_reset_agent_epsilon,_rl_set_agent_training,_rl_get_agent_training,_rl_get_agent_learning_rate,_rl_set_agent_learning_rate,_rl_get_agent_discount_factor,_rl_set_agent_discount_factor,_rl_get_agent_qtable,_rl_set_agent_reward_clip,_rl_set_agent_reward_normalization,_rl_get_agent_average_reward,_rl_get_agent_last_reward,_rl_get_agent_episode_count,_rl_get_agent_last_episode_length,_rl_get_agent_average_episode_length,_rl_notify_agent_episode_end,_rl_qtable_save,_rl_qtable_load,_rl_save_agent,_rl_load_agent"
     "--no-entry"
   )
 else()
