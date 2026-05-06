@@ -30,21 +30,7 @@ size_t QLearningAgent::choose_action(size_t state) const {
   if (!q_values) return 0;
 
   const size_t action_count = m_q_table->get_actions_num();
-  if (!m_training) {
-    float best_value = q_values[0];
-    for (size_t i = 1; i < action_count; ++i) best_value = std::max(best_value, q_values[i]);
-
-    std::vector<size_t> best_indices;
-    for (size_t i = 0; i < action_count; ++i) {
-      if (std::fabs(q_values[i] - best_value) <= 1e-6f) best_indices.push_back(i);
-    }
-    if (best_indices.empty()) return 0;
-    static thread_local std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<size_t> dist(0, best_indices.size() - 1);
-    return best_indices[dist(rng)];
-  }
-
-  return m_policy->select_action(q_values, action_count);
+  return m_policy->select_action(q_values, action_count, m_training);
 }
 
 void QLearningAgent::update(size_t state, size_t action, float reward, 
