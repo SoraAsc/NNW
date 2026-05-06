@@ -12,7 +12,7 @@ public:
   
   ~QLearningAgent() = default;
   
-  size_t choose_action(size_t state);
+  size_t choose_action(size_t state) const;
   
   void update(size_t state, size_t action, float reward, size_t next_state, bool done = false);
 
@@ -24,6 +24,7 @@ public:
   float get_learning_rate() const { return m_learning_rate; }
   float get_discount_factor() const { return m_discount_factor; }
   QTable* get_qtable() { return m_q_table.get(); }
+  const QTable* get_qtable() const { return m_q_table.get(); }
 
   // Reward clipping / normalization
   void set_reward_clip(bool enabled, float min_val, float max_val);
@@ -61,7 +62,6 @@ private:
   std::unique_ptr<Policy> m_policy;
   float m_learning_rate;
   float m_discount_factor;
-  size_t m_actions_num;
   bool m_training = true;
   // Reward handling
   bool m_reward_clip_enabled = false;
@@ -84,6 +84,6 @@ private:
     double average_episode_length = 0.0;
   } m_telemetry;
   
-  float get_max_qvalue(size_t state);
+  float get_max_qvalue(size_t state) const;
   void notify_step_reward(float reward);
 };

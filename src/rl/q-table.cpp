@@ -1,4 +1,5 @@
 #include "rl/q-table.h"
+#include <cassert>
 #include <stdexcept>
 #include <cstdio>
 #include <fstream>
@@ -63,7 +64,8 @@ bool QTable::load(const std::string& path) {
   return true;
 }
 
-float QTable::get(size_t state, size_t action) {
+float QTable::get(size_t state, size_t action) const {
+  assert(is_valid_index(state, action) && "QTable::get() - invalid index");
   if (!is_valid_index(state, action)) {
     std::fprintf(stderr, "QTable::get() - invalid index (state=%zu, action=%zu)\n", state, action);
     return 0.0f;
@@ -73,12 +75,23 @@ float QTable::get(size_t state, size_t action) {
 }
 
 void QTable::set(size_t state, size_t action, float value) {
+  assert(is_valid_index(state, action) && "QTable::set() - invalid index");
   if (!is_valid_index(state, action)) {
     std::fprintf(stderr, "QTable::set() - invalid index (state=%zu, action=%zu) - ignoring\n", state, action);
     return;
   }
 
   m_data[state * actions_num + action] = value;
+}
+
+const float* QTable::get_row(size_t state) const {
+  assert(state < states_num && "QTable::get_row() - invalid state");
+  if (state >= states_num) {
+    std::fprintf(stderr, "QTable::get_row() - invalid state %zu\n", state);
+    return nullptr;
+  }
+
+  return m_data.data() + state * actions_num;
 }
 
 bool QTable::is_valid_index(size_t state, size_t action) const {

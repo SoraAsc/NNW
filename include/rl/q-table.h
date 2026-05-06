@@ -7,8 +7,9 @@ public:
   QTable(const size_t states_num, size_t actions_num);
   ~QTable() = default;
 
-  float get(size_t state, size_t action);
+  float get(size_t state, size_t action) const;
   void set(size_t state, size_t action, float value);
+  const float* get_row(size_t state) const;
   bool is_valid_index(size_t state, size_t action) const;
   
   size_t get_states_num() const { return states_num; }

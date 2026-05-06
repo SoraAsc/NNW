@@ -1,5 +1,6 @@
 #include "rl/q-learning-agent.h"
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include "rl/policy.h"
 #include <cstdio>
@@ -10,7 +11,6 @@ QLearningAgent::QLearningAgent(size_t states_num,
                                float discount_factor)
   : m_learning_rate(learning_rate),
     m_discount_factor(discount_factor),
-    m_actions_num(actions_num),
     m_training(true) {
   
   m_q_table = std::make_unique<QTable>(states_num, actions_num);
@@ -24,16 +24,18 @@ QLearningAgent::QLearningAgent(size_t states_num,
   m_reward_normalize_scale = 1.0f;
 }
 
-size_t QLearningAgent::choose_action(size_t state) {
-  std::vector<float> q_values(m_actions_num);
-  for (size_t a = 0; a < m_actions_num; ++a) q_values[a] = m_q_table->get(state, a);
+size_t QLearningAgent::choose_action(size_t state) const {
+  const float* q_values = m_q_table->get_row(state);
+  assert(q_values != nullptr && "QLearningAgent::choose_action() - invalid state");
+  if (!q_values) return 0;
 
+  const size_t action_count = m_q_table->get_actions_num();
   if (!m_training) {
     float best_value = q_values[0];
-    for (size_t i = 1; i < m_actions_num; ++i) best_value = std::max(best_value, q_values[i]);
+    for (size_t i = 1; i < action_count; ++i) best_value = std::max(best_value, q_values[i]);
 
     std::vector<size_t> best_indices;
-    for (size_t i = 0; i < m_actions_num; ++i) {
+    for (size_t i = 0; i < action_count; ++i) {
       if (std::fabs(q_values[i] - best_value) <= 1e-6f) best_indices.push_back(i);
     }
     if (best_indices.empty()) return 0;
@@ -42,14 +44,12 @@ size_t QLearningAgent::choose_action(size_t state) {
     return best_indices[dist(rng)];
   }
 
-  return m_policy->select_action(q_values.data(), m_actions_num);
+  return m_policy->select_action(q_values, action_count);
 }
 
 void QLearningAgent::update(size_t state, size_t action, float reward, 
                             size_t next_state, bool done) {
   if (!m_training) return;
-
-  notify_step_reward(reward);
 
   if (m_reward_clip_enabled) {
     if (reward < m_reward_clip_min) reward = m_reward_clip_min;
@@ -58,6 +58,8 @@ void QLearningAgent::update(size_t state, size_t action, float reward,
 
   if (m_reward_normalize_enabled && m_reward_normalize_scale != 0.0f)
     reward = reward / m_reward_normalize_scale;
+
+  notify_step_reward(reward);
 
   // Q-Learning: Q(s,a) = Q(s,a) + α[r + γ*max(Q(s',a')) - Q(s,a)]
   float current_q = m_q_table->get(state, action);
@@ -69,17 +71,17 @@ void QLearningAgent::update(size_t state, size_t action, float reward,
   if (done) notify_episode_end();
 }
 
-float QLearningAgent::get_max_qvalue(size_t state) {
-  float max_q = -std::numeric_limits<float>::infinity();
-
-  if (!m_q_table->is_valid_index(state, 0)) {
+float QLearningAgent::get_max_qvalue(size_t state) const {
+  const float* q_values = m_q_table->get_row(state);
+  if (!q_values) {
     std::fprintf(stderr, "QLearningAgent::get_max_qvalue() - invalid state %zu\n", state);
     return 0.0f;
   }
 
-  for (size_t a = 0; a < m_actions_num; ++a) {
-    float q_value = m_q_table->get(state, a);
-    max_q = std::max(max_q, q_value);
+  const size_t action_count = m_q_table->get_actions_num();
+  float max_q = q_values[0];
+  for (size_t a = 1; a < action_count; ++a) {
+    max_q = std::max(max_q, q_values[a]);
   }
 
   return max_q;
