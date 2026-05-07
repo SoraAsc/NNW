@@ -16,6 +16,10 @@ public:
 
   void zero();
   void fill(float value);
+  
+  // In-place operations for efficiency (especially useful for optimizers)
+  void add_scalar_inplace(float scalar);
+  void sub_scalar_inplace(float scalar);
 
   // Helper functions for common tensor operations
   static Tensor add_rowwise(const Tensor& a, const Tensor& rowVec); // Add row vector to each row of matrix a

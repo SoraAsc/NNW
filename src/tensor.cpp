@@ -29,6 +29,14 @@ void Tensor::fill(float value) {
   std::fill(m_data.begin(), m_data.end(), value);
 }
 
+void Tensor::add_scalar_inplace(float scalar) {
+  for (float& val : m_data) val += scalar;
+}
+
+void Tensor::sub_scalar_inplace(float scalar) {
+  for (float& val : m_data) val -= scalar;
+}
+
 size_t Tensor::compute_numel() const {
   size_t total = 1;
   for (size_t dim : m_shape) total *= dim;
@@ -55,10 +63,14 @@ Tensor Tensor::add_rowwise(const Tensor& a, const Tensor& rowVec) {
   Tensor result(a.m_shape);
   size_t rows = a.m_shape[0];
   size_t cols = a.m_shape[1];
+  const float* rv_data = rowVec.m_data.data();
   
+  // Optimized: row-wise operation with better cache locality
   for (size_t i = 0; i < rows; ++i) {
+    const float* a_row = a.m_data.data() + i * cols;
+    float* result_row = result.m_data.data() + i * cols;
     for (size_t j = 0; j < cols; ++j)
-      result.m_data[i * cols + j] = a.m_data[i * cols + j] + rowVec.m_data[j];
+      result_row[j] = a_row[j] + rv_data[j];
   }
   
   return result;
@@ -72,10 +84,14 @@ Tensor Tensor::reduce_sum_rows(const Tensor& a) {
   size_t cols = a.m_shape[1];
   
   Tensor result({cols}); // Result is 1D with size equal to number of columns
-  for (size_t j = 0; j < cols; ++j) {
-    float sum = 0.0f;
-    for (size_t i = 0; i < rows; ++i) sum += a.m_data[i * cols + j];
-    result.m_data[j] = sum;
+  float* result_data = result.m_data.data();
+  const float* a_data = a.m_data.data();
+  
+  // Optimized: iterate by rows instead of columns for better cache locality
+  std::fill(result_data, result_data + cols, 0.0f);
+  for (size_t i = 0; i < rows; ++i) {
+    for (size_t j = 0; j < cols; ++j)
+      result_data[j] += a_data[i * cols + j];
   }
   
   return result;
@@ -145,16 +161,27 @@ Tensor Tensor::matmul(const Tensor& a, const Tensor& b) {
   if (a.m_shape[1] != b.m_shape[0])
     throw std::invalid_argument("Inner dimensions do not match for matrix multiplication");
   
-  std::vector<size_t> result_shape = {a.m_shape[0], b.m_shape[1]};
+  size_t m = a.m_shape[0];  // rows of a
+  size_t k = a.m_shape[1];  // cols of a / rows of b
+  size_t n = b.m_shape[1];  // cols of b
+  
+  std::vector<size_t> result_shape = {m, n};
   Tensor result(result_shape);
   
-  for (size_t i = 0; i < a.m_shape[0]; ++i) {
-    for (size_t j = 0; j < b.m_shape[1]; ++j) {
-      float sum = 0.0f;
-      for (size_t k = 0; k < a.m_shape[1]; ++k) 
-        sum += a.m_data[i * a.m_shape[1] + k] * b.m_data[k * b.m_shape[1] + j];
-
-      result.m_data[i * result_shape[1] + j] = sum;
+  const float* a_data = a.m_data.data();
+  const float* b_data = b.m_data.data();
+  float* result_data = result.m_data.data();
+  
+  for (size_t i = 0; i < m; ++i) {
+    std::fill(result_data + i * n, result_data + i * n + n, 0.0f);
+    
+    for (size_t k_idx = 0; k_idx < k; ++k_idx) {
+      float a_val = a_data[i * k + k_idx];
+      const float* b_row = b_data + k_idx * n;
+      float* res_row = result_data + i * n;
+      
+      // Accumulate with sequential access to result and b
+      for (size_t j = 0; j < n; ++j) res_row[j] += a_val * b_row[j];
     }
   }
   

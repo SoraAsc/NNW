@@ -53,10 +53,15 @@ Tensor DenseLayer::backward(const Tensor& grad_output) {
 };
 
 void DenseLayer::update(float learning_rate) {
-  // W := W - lr * dW
+  // W := W - lr * dW (in-place to avoid temporary allocations)
   // b := b - lr * db
-  weights = Tensor::add(weights, Tensor::mul_scalar(grad_weights, -learning_rate));
-  biases = Tensor::add(biases, Tensor::mul_scalar(grad_biases, -learning_rate));
+  float* weights_data = weights.data();
+  const float* grad_w_data = grad_weights.data();
+  for (size_t i = 0; i < weights.numel(); ++i) weights_data[i] -= learning_rate * grad_w_data[i];
+  
+  float* biases_data = biases.data();
+  const float* grad_b_data = grad_biases.data();
+  for (size_t i = 0; i < biases.numel(); ++i) biases_data[i] -= learning_rate * grad_b_data[i];
 };
 
 void DenseLayer::zero_grad() {

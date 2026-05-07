@@ -90,9 +90,9 @@ void nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t 
 }
 
 void nn_predict(const NN_Model* model, const float* x, size_t n_samples, size_t x_dim, float* out, size_t y_dim) {
-  for(size_t i = 0; i < n_samples; ++i) {
-    Tensor in = make_tensor_from_row2d(x, x_dim, i, x_dim);
-    Tensor pred = const_cast<Model&>(model->impl).forward(in);
-    std::memcpy(out + i * y_dim, pred.data(), sizeof(float) * y_dim);
-  }
+  Tensor batch_input({n_samples, x_dim});
+  std::memcpy(batch_input.data(), x, sizeof(float) * n_samples * x_dim);
+  
+  Tensor batch_output = const_cast<Model&>(model->impl).forward(batch_input);
+  std::memcpy(out, batch_output.data(), sizeof(float) * n_samples * y_dim);
 }
