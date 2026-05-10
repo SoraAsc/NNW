@@ -33,23 +33,14 @@ jobs:
       - name: Configure CMake
         shell: bash
         run: |
-          mkdir -p build
-          cd build
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            cmake .. -A x64 -DBUILD_EXAMPLES=OFF
-          else
-            cmake .. -DBUILD_EXAMPLES=OFF
-          fi
+          mkdir -p build && cd build
+          CMAKE_ARGS="-DBUILD_EXAMPLES=OFF"
+          [ "${{ runner.os }}" = "Windows" ] && CMAKE_ARGS="$CMAKE_ARGS -A x64"
+          cmake .. $CMAKE_ARGS
 
       - name: Build C++
         shell: bash
-        run: |
-          cd build
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            cmake --build . --config Release
-          else
-            cmake --build . --config Release -- -j$(nproc)
-          fi
+        run: cmake --build build --config Release --parallel
 
       - name: Copy and rename native library
         shell: bash
