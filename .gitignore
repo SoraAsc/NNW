@@ -1,5 +1,6 @@
 # Build dirs
 /build/
+/build-wasm/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake

@@ -2,6 +2,9 @@
 #include "rl/q-table.h"
 #include "rl/q-learning-agent.h"
 #include "rl/policy.h"
+#include "nn/model.h"
+#include "nn/layers/dense_layer.h"
+#include "rl/simple_policy_optimization.h"
 #include <memory>
 #include <cstring>
 #include <cmath>
@@ -391,4 +394,54 @@ RL_Agent* rl_load_agent(const char* path) {
   }
 
   return agent;
+}
+
+// Simple Policy Optimization API
+
+struct RL_SPO {
+  std::unique_ptr<Model> model;
+  std::unique_ptr<rl::SimplePolicyOptimization> spo;
+  size_t action_size;
+};
+
+RL_SPO* rl_spo_create(size_t state_size, size_t action_size, float learning_rate, float discount_factor) {
+  RL_SPO* spo = new RL_SPO();
+  spo->action_size = action_size;
+  spo->model = std::make_unique<Model>();
+  spo->model->add_layer(new DenseLayer(state_size, 64, ActivationType::RELU));
+  spo->model->add_layer(new DenseLayer(64, action_size, ActivationType::NONE));
+
+  rl::SimplePolicyOptimizationConfig config;
+  config.learning_rate = learning_rate;
+  config.discount_factor = discount_factor;
+  config.max_episodes = 0; // unlimited
+  config.verbose = false;
+
+  spo->spo = std::make_unique<rl::SimplePolicyOptimization>(*spo->model, config);
+  return spo;
+}
+
+void rl_spo_free(RL_SPO* spo) {
+  delete spo;
+}
+
+size_t rl_spo_choose_action(RL_SPO* spo, size_t state, int training) {
+  return spo->spo->choose_action(state, spo->model->layers().back()->info().find("Output=") != std::string::npos ? 
+    std::stoul(spo->model->layers().back()->info().substr(spo->model->layers().back()->info().find("Output=") + 7)) : spo->action_size, 
+    training != 0);
+}
+
+void rl_spo_train_episode(RL_SPO* spo, RL_Agent* env_agent) {
+  // Placeholder: implement proper environment wrapping
+  // For now, this is not functional
+}
+
+bool rl_spo_save(RL_SPO* spo, const char* path) {
+  // Placeholder: save model weights
+  return false;
+}
+
+RL_SPO* rl_spo_load(const char* path) {
+  // Placeholder: load model weights
+  return nullptr;
 }

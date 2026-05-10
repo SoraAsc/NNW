@@ -74,4 +74,15 @@ extern "C" {
   double rl_get_agent_average_episode_length(RL_Agent* agent);
   // Manually finalize an episode (call if episode ended due to external stop)
   void rl_notify_agent_episode_end(RL_Agent* agent);
+
+// Simple Policy Optimization API
+typedef struct RL_SPO RL_SPO;
+
+RL_SPO* rl_spo_create(size_t state_size, size_t action_size, float learning_rate, float discount_factor);
+void rl_spo_free(RL_SPO* spo);
+size_t rl_spo_choose_action(RL_SPO* spo, size_t state, int training);
+void rl_spo_train_episode(RL_SPO* spo, RL_Agent* env_agent); // Uses RL_Agent as environment wrapper
+bool rl_spo_save(RL_SPO* spo, const char* path);
+RL_SPO* rl_spo_load(const char* path);
+
 }
