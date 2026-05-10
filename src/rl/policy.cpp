@@ -5,6 +5,7 @@
 static constexpr float EPS_TOL = 1e-6f;
 
 size_t GreedyPolicy::select_action(const float* q_values, size_t num_actions, bool training) {
+  (void)training;
   size_t best_action = 0;
   float best_value = q_values[0];
   

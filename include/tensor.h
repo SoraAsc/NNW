@@ -12,7 +12,7 @@ public:
   float* data();
   const float* data() const; // Read-only access to data
   const std::vector<size_t>& shape() const;
-  const size_t numel() const;
+  size_t numel() const;
 
   void zero();
   void fill(float value);

@@ -70,14 +70,7 @@ static Tensor make_tensor_from_row(const float* base, size_t stride_elems, size_
   return t;
 }
 
-static Tensor make_tensor_from_row2d(const float* base, size_t stride_elems, size_t row, size_t dim) {
-  Tensor t({1, dim});
-  std::memcpy(t.data(), base + row*stride_elems, sizeof(float)*dim);
-  return t;
-}
-
 void nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t x_dim, const float* y, size_t y_dim) {
-  const Model* model = trainer->impl->get_model();
   std::vector<Tensor> vin; vin.reserve(n_samples);
   std::vector<Tensor> vtar; vtar.reserve(n_samples);
 

@@ -47,7 +47,7 @@ const std::vector<size_t>& Tensor::shape() const {
   return m_shape;
 }
 
-const size_t Tensor::numel() const {
+size_t Tensor::numel() const {
   return m_data.size();
 }
 

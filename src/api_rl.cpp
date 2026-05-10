@@ -322,7 +322,6 @@ RL_Agent* rl_load_agent(const char* path) {
   std::ifstream ifs(path, std::ios::binary);
   if (!ifs) return nullptr;
 
-  char magic[9] = {0};
   const char expected[] = "RLAGENTV1";
   const size_t expected_len = std::strlen(expected);
   std::string read_magic(expected_len, '\0');
@@ -432,16 +431,21 @@ size_t rl_spo_choose_action(RL_SPO* spo, size_t state, int training) {
 }
 
 void rl_spo_train_episode(RL_SPO* spo, RL_Agent* env_agent) {
+  (void)spo;
+  (void)env_agent;
   // Placeholder: implement proper environment wrapping
   // For now, this is not functional
 }
 
 bool rl_spo_save(RL_SPO* spo, const char* path) {
+  (void)spo;
+  (void)path;
   // Placeholder: save model weights
   return false;
 }
 
 RL_SPO* rl_spo_load(const char* path) {
+  (void)path;
   // Placeholder: load model weights
   return nullptr;
 }

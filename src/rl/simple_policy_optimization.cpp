@@ -36,7 +36,7 @@ void SimplePolicyOptimization::train_episode(Environment& env, EpisodeCallback c
     size_t action = choose_action(state, state_count, true);
     actions.push_back(action);
 
-    bool done = env.step(action);
+    env.step(action);
 
     size_t next_state = env.get_state();
     float reward = env.get_reward();
@@ -87,7 +87,6 @@ size_t SimplePolicyOptimization::choose_action(size_t state, size_t state_size, 
   Tensor state_input = make_one_hot(state, state_size);
   Tensor logits = m_model.forward(state_input);
   std::vector<float> probs = action_probabilities(logits);
-  size_t action_count = probs.size();
 
   if (!training) {
     return static_cast<size_t>(std::distance(probs.begin(), std::max_element(probs.begin(), probs.end())));
@@ -148,4 +147,4 @@ std::vector<float> SimplePolicyOptimization::action_probabilities(const Tensor& 
   return exps;
 }
 
-} // namespace rl
+}
