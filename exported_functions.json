@@ -42,11 +42,5 @@
   "_rl_qtable_save",
   "_rl_qtable_load",
   "_rl_save_agent",
-  "_rl_load_agent",
-  "_rl_spo_create",
-  "_rl_spo_free",
-  "_rl_spo_choose_action",
-  "_rl_spo_train_episode",
-  "_rl_spo_save",
-  "_rl_spo_load"
+  "_rl_load_agent"
 ]

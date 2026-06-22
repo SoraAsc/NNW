@@ -1,0 +1,29 @@
+{
+  "name": "nnw",
+  "version": "0.4.0",
+  "description": "TypeScript bindings for NNW neural network library",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && cp -r src/libs dist/"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.40",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "neural-network",
+    "reinforcement-learning",
+    "policy-optimization",
+    "webassembly",
+    "typescript"
+  ]
+}

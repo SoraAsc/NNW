@@ -24,24 +24,41 @@ file(GLOB_RECURSE LIB_SRCS CONFIGURE_DEPENDS
 if(EMSCRIPTEN)
   message(STATUS "Building for WebAssembly")
 
-  add_executable(nn ${LIB_SRCS})
+  # Common link options for both JS and MJS targets
+  set(WASM_COMMON_LINK_OPTIONS
+    "-O3"
+    "-sWASM=1"
+    "-sALLOW_MEMORY_GROWTH=1"
+    "-sEXPORTED_FUNCTIONS=@${CMAKE_CURRENT_SOURCE_DIR}/exported_functions.json"
+    "--no-entry"
+  )
 
+  # 1. Legacy Target (CommonJS - nn.js)
+  add_executable(nn ${LIB_SRCS})
   set_target_properties(nn PROPERTIES
     OUTPUT_NAME "nn"
     PREFIX ""
     SUFFIX ".js"
   )
-
   target_compile_options(nn PRIVATE -O3)
-
   target_link_options(nn PRIVATE
-    "-O3"
-    "-sWASM=1"
+    ${WASM_COMMON_LINK_OPTIONS}
     "-sMODULARIZE=1"
-    "-sALLOW_MEMORY_GROWTH=1"
     "-sEXPORT_NAME=createNNModule"
-    "-sEXPORTED_FUNCTIONS=@${CMAKE_CURRENT_SOURCE_DIR}/exported_functions.json"
-    "--no-entry"
+  )
+
+  # 2. Modern Target (ES Module - nn.mjs)
+  add_executable(nn_mjs ${LIB_SRCS})
+  set_target_properties(nn_mjs PROPERTIES
+    OUTPUT_NAME "nn"
+    PREFIX ""
+    SUFFIX ".mjs"
+  )
+  target_compile_options(nn_mjs PRIVATE -O3)
+  target_link_options(nn_mjs PRIVATE
+    ${WASM_COMMON_LINK_OPTIONS}
+    "-sEXPORT_ES6=1"
+    "-sUSE_ES6_IMPORT_META=1"
   )
 
 else()
