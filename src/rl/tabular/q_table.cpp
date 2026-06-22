@@ -1,4 +1,4 @@
-#include "rl/q-table.h"
+#include "rl/tabular/q_table.h"
 #include <cassert>
 #include <stdexcept>
 #include <cstdio>

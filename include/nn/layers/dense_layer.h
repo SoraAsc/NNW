@@ -1,5 +1,5 @@
 #pragma once
-#include "nn/layers/layer.h"  
+#include "nn/layers/layer.h"
 #include "nn/activation/activation.h"
 
 class DenseLayer : public Layer {

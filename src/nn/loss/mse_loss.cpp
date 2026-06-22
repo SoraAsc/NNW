@@ -1,4 +1,4 @@
-#include "nn/loss/loss_mse.h"
+#include "nn/loss/mse_loss.h"
 #include <stdexcept>
 
 float MSELoss::forward(const Tensor& predicted, const Tensor& target) {

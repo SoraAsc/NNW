@@ -2,13 +2,13 @@
 #include <vector>
 #include <memory>
 
-#include "tensor.h"
+#include "nn/tensor.h"
 #include "nn/layers/dense_layer.h"
 #include "nn/model.h"
-#include "nn/loss/loss_mse.h"
-#include "training/optimizer/optimizer_sgd.h"
-#include "training/optimizer/optimizer_adamw.h"
-#include "training/trainer/trainer.h"
+#include "nn/loss/mse_loss.h"
+#include "nn/training/optimizer/sgd_optimizer.h"
+#include "nn/training/optimizer/adamw_optimizer.h"
+#include "nn/training/trainer.h"
 
 int main() {
   // Tiny network: 2 -> 2 (Tanh) -> 1 (Sigmoid)

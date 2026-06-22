@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cstddef>
+
 #define API
 
-#include "training/trainer/trainer.h"
-#include "nn/layers/dense_layer.h"
-
+#ifdef __cplusplus
 extern "C" {
+#endif
   // Opaque handler
   typedef struct NN_Model NN_Model;
   typedef struct NN_Trainer NN_Trainer;
@@ -37,4 +38,7 @@ extern "C" {
 
   API void nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t x_dim, const float* y, size_t y_dim);
   API void nn_predict(const NN_Model* model, const float* x, size_t n_samples, size_t x_dim, float* out, size_t y_dim);
+
+#ifdef __cplusplus
 }
+#endif

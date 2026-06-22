@@ -1,5 +1,5 @@
 #pragma once
-#include "tensor.h"
+#include "nn/tensor.h"
 #include <string>
 
 class Layer {
@@ -14,4 +14,3 @@ public:
   virtual ~Layer() = default;
 
 };
-

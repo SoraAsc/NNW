@@ -1,4 +1,4 @@
-#include "tensor.h"
+#include "nn/tensor.h"
 #include <stdexcept>
 
 Tensor::Tensor(const std::vector<size_t>& shape): m_shape(shape) {

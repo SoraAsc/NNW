@@ -1,8 +1,9 @@
-#include "rl/q-learning-agent.h"
+#include "rl/tabular/q_learning_agent.h"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include "rl/policy.h"
+#include "rl/tabular/policy/epsilon_greedy_policy.h"
+#include "rl/tabular/policy/greedy_policy.h"
 #include <cstdio>
 
 QLearningAgent::QLearningAgent(size_t states_num,

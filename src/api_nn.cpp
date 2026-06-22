@@ -1,10 +1,15 @@
-#include "api.h"
-#include <cstddef>
-#include "nn/loss/loss_mse.h"
-#include "training/optimizer/optimizer_adamw.h"
-#include "training/optimizer/optimizer_sgd.h"
-#include <iostream>
+#include "api_nn.h"
+
+#include "nn/layers/dense_layer.h"
+#include "nn/loss/mse_loss.h"
+#include "nn/model.h"
+#include "nn/tensor.h"
+#include "nn/training/optimizer/adamw_optimizer.h"
+#include "nn/training/optimizer/sgd_optimizer.h"
+#include "nn/training/trainer.h"
+
 #include <cstring>
+#include <vector>
 
 // Types
 struct NN_Model { Model impl; size_t input_dim = 0; size_t output_dim = 0; };
@@ -39,11 +44,12 @@ size_t nn_get_output_dim(const  NN_Model* model) { return model->output_dim; }
 
 // Trainer
 NN_Trainer* nn_create_trainer(NN_Model* model, NN_Optimizer opt, NN_Loss loss, const NN_TrainerConfig* cfg) {
+  const float learning_rate = cfg ? cfg->learning_rate : 1e-3f;
   Optimizer* optimizer = nullptr;
   switch (opt)
   {
-    case NN_OPT_ADAMW: optimizer = new AdamW(model->impl, cfg->learning_rate); break;
-    default: case NN_OPT_SGD: optimizer = new SGD(model->impl, cfg->learning_rate); break;
+    case NN_OPT_ADAMW: optimizer = new AdamW(model->impl, learning_rate); break;
+    default: case NN_OPT_SGD: optimizer = new SGD(model->impl, learning_rate); break;
   }
   Loss* lossfn = nullptr;
   switch (loss)
@@ -52,9 +58,11 @@ NN_Trainer* nn_create_trainer(NN_Model* model, NN_Optimizer opt, NN_Loss loss, c
   }
 
   TrainerConfig tcfg;
-  tcfg.epochs = cfg ? cfg->epochs : 3000;
-  tcfg.batch_size = cfg ? cfg->batch_size : 4;
-  tcfg.shuffle = cfg ? cfg->shuffle : true;
+  if (cfg) {
+    tcfg.epochs = cfg->epochs;
+    tcfg.batch_size = cfg->batch_size;
+    tcfg.shuffle = cfg->shuffle != 0;
+  }
 
   NN_Trainer* trainer = new NN_Trainer();
   trainer->impl = new Trainer(&model->impl, lossfn, optimizer, tcfg);

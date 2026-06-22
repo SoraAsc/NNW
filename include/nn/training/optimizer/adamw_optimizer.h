@@ -1,5 +1,5 @@
 #pragma once
-#include "training/optimizer/optimizer.h"
+#include "nn/training/optimizer/optimizer.h"
 #include <unordered_map>
 
 struct AdamWMoments {

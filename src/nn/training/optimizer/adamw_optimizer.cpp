@@ -1,4 +1,4 @@
-#include "training/optimizer/optimizer_adamw.h"
+#include "nn/training/optimizer/adamw_optimizer.h"
 #include <cmath>
 #include <stdexcept>
 

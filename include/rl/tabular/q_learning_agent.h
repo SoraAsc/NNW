@@ -1,6 +1,9 @@
 #pragma once
-#include "rl/q-table.h"
-#include "rl/policy.h"
+
+#include "rl/tabular/policy/policy.h"
+#include "rl/tabular/q_table.h"
+#include "rl/tabular/telemetry.h"
+
 #include <memory>
 
 class QLearningAgent {
@@ -70,19 +73,7 @@ private:
   bool m_reward_normalize_enabled = false;
   float m_reward_normalize_scale = 1.0f;
 
-  struct Telemetry {
-    double cumulative_reward = 0.0;
-    size_t episode_steps = 0;
-    size_t episodes = 0;
-    double total_reward_all_episodes = 0.0;
-    double average_reward = 0.0;
-    double last_episode_reward = 0.0;
-    bool in_episode = false;
-    // episode length
-    size_t last_episode_length = 0;
-    double total_steps_all_episodes = 0.0;
-    double average_episode_length = 0.0;
-  } m_telemetry;
+  TabularRlTelemetry m_telemetry;
   
   float get_max_qvalue(size_t state) const;
   void notify_step_reward(float reward);

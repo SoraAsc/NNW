@@ -1,9 +1,13 @@
-#include "api_rl.h"
-#include "rl/q-table.h"
-#include "rl/q-learning-agent.h"
-#include "rl/policy.h"
+#include "api_q_learning.h"
+
 #include "nn/model.h"
 #include "nn/layers/dense_layer.h"
+#include "rl/tabular/policy/epsilon_greedy_policy.h"
+#include "rl/tabular/policy/greedy_policy.h"
+#include "rl/tabular/serialization.h"
+#include "rl/tabular/q_learning_agent.h"
+#include "rl/tabular/q_table.h"
+
 #include <memory>
 #include <cstring>
 #include <cmath>
@@ -171,22 +175,27 @@ int rl_get_agent_training(RL_Agent* agent) {
 }
 
 float rl_get_agent_learning_rate(RL_Agent* agent) {
+  if (!agent) return 0.0f;
   return agent->impl->get_learning_rate();
 }
 
 void rl_set_agent_learning_rate(RL_Agent* agent, float lr) {
+  if (!agent) return;
   agent->impl->set_learning_rate(lr);
 }
 
 float rl_get_agent_discount_factor(RL_Agent* agent) {
+  if (!agent) return 0.0f;
   return agent->impl->get_discount_factor();
 }
 
 void rl_set_agent_discount_factor(RL_Agent* agent, float gamma) {
+  if (!agent) return;
   agent->impl->set_discount_factor(gamma);
 }
 
 RL_QTable* rl_get_agent_qtable(RL_Agent* agent) {
+  if (!agent) return nullptr;
   QTable* original = agent->impl->get_qtable();
   RL_QTable* qtable = new RL_QTable(
     original->get_states_num(),
@@ -246,14 +255,14 @@ void rl_notify_agent_episode_end(RL_Agent* agent) {
 // Q-Table save/load
 bool rl_qtable_save(RL_QTable* qtable, const char* path) {
   if (!qtable || !path) return false;
-  return qtable->impl->save(std::string(path));
+  return save_q_table(*qtable->impl, std::string(path));
 }
 
 RL_QTable* rl_qtable_load(const char* path) {
   if (!path) return nullptr;
   // create dummy qtable and let load resize it
   RL_QTable* q = new RL_QTable(1, 1);
-  if (!q->impl->load(std::string(path))) {
+  if (!load_q_table(*q->impl, std::string(path))) {
     delete q;
     return nullptr;
   }

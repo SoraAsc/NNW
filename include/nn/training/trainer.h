@@ -1,7 +1,7 @@
 #pragma once
 #include "nn/model.h"
 #include "nn/loss/loss.h"
-#include "training/optimizer/optimizer.h"
+#include "nn/training/optimizer/optimizer.h"
 #include <random>
 
 struct TrainerConfig {

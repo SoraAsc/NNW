@@ -1,4 +1,4 @@
-#include "training/optimizer/optimizer_sgd.h"
+#include "nn/training/optimizer/sgd_optimizer.h"
 
 SGD::SGD(Model& model, float learning_rate): m_model(model), m_learning_rate(learning_rate) {}
 

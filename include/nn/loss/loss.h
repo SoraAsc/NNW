@@ -1,5 +1,5 @@
 #pragma once
-#include "tensor.h"
+#include "nn/tensor.h"
 
 class Loss {
 public:

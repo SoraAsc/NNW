@@ -1,4 +1,4 @@
-#include "training/trainer/trainer.h"
+#include "nn/training/trainer.h"
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
-#include "rl/environment.h"
-#include "api_rl.h"
+#include "rl/tabular/environment.h"
+#include "api_q_learning.h"
 
 class MyGridWorld : public Environment {
 public:
@@ -166,9 +166,7 @@ int main() {
     std::cout << "Example: Q(0,3) after load = " << rl_get_qtable(q2, 0, 3) << std::endl;
     rl_free_qtable(q2);
     rl_free_agent(loaded);
-  } else {
-    std::cout << "Failed to load agent from " << path << std::endl;
-  }
+  } else std::cout << "Failed to load agent from " << path << std::endl;
   
   return 0;
 }

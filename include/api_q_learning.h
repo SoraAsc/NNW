@@ -1,8 +1,13 @@
 #pragma once
 
 #include <cstddef>
+#include <stdbool.h>
 
+#define API
+
+#ifdef __cplusplus
 extern "C" {
+#endif
   // Q-Table API  
   typedef struct RL_QTable RL_QTable;
   
@@ -74,4 +79,7 @@ extern "C" {
   double rl_get_agent_average_episode_length(RL_Agent* agent);
   // Manually finalize an episode (call if episode ended due to external stop)
   void rl_notify_agent_episode_end(RL_Agent* agent);
+
+#ifdef __cplusplus
 }
+#endif
