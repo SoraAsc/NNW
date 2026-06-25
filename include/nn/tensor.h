@@ -21,6 +21,20 @@ public:
   void add_scalar_inplace(float scalar);
   void sub_scalar_inplace(float scalar);
 
+  // Row access on the leading dimension (works for any rank ≥ 1)
+  // A "row" here means the sub-tensor at index `row` along axis 0.
+  // e.g. tensor shape [T, E, D] → get_row(t) returns shape [E, D]
+  Tensor get_row(size_t row) const;
+  void set_row(size_t row, const Tensor& src);
+
+  // Reshape — total elements must be unchanged.
+  // Pass (size_t)-1 for at most one dimension to infer it automatically.
+  Tensor reshape(const std::vector<size_t>& new_shape) const;
+
+  // Gather rows along axis 0 by index list.
+  // Returns tensor whose leading dim == indices.size().
+  Tensor gather(const std::vector<size_t>& indices) const;
+
   // Helper functions for common tensor operations
   static Tensor add_rowwise(const Tensor& a, const Tensor& rowVec); // Add row vector to each row of matrix a
   static Tensor reduce_sum_rows(const Tensor& a); // Sum over rows, result is 1D
@@ -32,6 +46,17 @@ public:
   static Tensor mul_scalar(const Tensor& a, float scalar);
   static Tensor matmul(const Tensor& a, const Tensor& b);
   static Tensor transpose(const Tensor& a);
+  static float sum(const Tensor& a);   // sum of all elements
+  static Tensor exp(const Tensor& a);
+  static Tensor log(const Tensor& a);
+  static Tensor square(const Tensor& a);
+  static Tensor clamp(const Tensor& a, float min_val, float max_val);
+  static Tensor minimum(const Tensor& a, const Tensor& b);  // element-wise min
+  static Tensor maximum(const Tensor& a, const Tensor& b);  // element-wise max (symmetric, added for completeness)
+
+  static Tensor zeros(const std::vector<size_t>& shape); // all-zero tensor
+  static Tensor from_scalar(float value); // shape {1}
+  static float std_val(const Tensor& a);  // population std-dev of all elements
 
 private:
   std::vector<size_t> m_shape;

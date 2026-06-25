@@ -1,5 +1,6 @@
 #include "nn/tensor.h"
 #include <stdexcept>
+#include <cmath>
 
 Tensor::Tensor(const std::vector<size_t>& shape): m_shape(shape) {
   if(shape.empty()) throw std::invalid_argument("Shape cannot be empty");
@@ -35,6 +36,91 @@ void Tensor::add_scalar_inplace(float scalar) {
 
 void Tensor::sub_scalar_inplace(float scalar) {
   for (float& val : m_data) val -= scalar;
+}
+
+// Returns the sub-tensor at index `row` along axis 0.
+// Shape [d0, d1, ..., dk] → result shape [d1, ..., dk]
+Tensor Tensor::get_row(size_t row) const {
+  const auto& s = m_shape;
+  if (s.empty()) throw std::runtime_error("get_row: tensor has no shape");
+  if (row >= s[0]) throw std::out_of_range("get_row: row index out of bounds");
+ 
+  // Row stride = product of all dims except the first
+  size_t row_stride = numel() / s[0];
+ 
+  // Build child shape  (drop leading dim)
+  std::vector<size_t> child_shape(s.begin() + 1, s.end());
+  if (child_shape.empty()) child_shape = {1}; // scalar row → shape {1}
+ 
+  std::vector<float> child_data(
+    m_data.begin() + row * row_stride,
+    m_data.begin() + row * row_stride + row_stride);
+ 
+  return Tensor(child_data, child_shape);
+}
+
+void Tensor::set_row(size_t row, const Tensor& src) {
+  const auto& s = m_shape;
+  if (s.empty()) throw std::runtime_error("set_row: tensor has no shape");
+  if (row >= s[0]) throw std::out_of_range("set_row: row index out of bounds");
+ 
+  size_t row_stride = numel() / s[0];
+ 
+  if (src.numel() != row_stride) 
+    throw std::invalid_argument("set_row: source numel does not match row stride");
+
+  // Check that the sub-shapes are compatible, not just the total count.
+  // Expected child shape is m_shape[1:] (or {1} for a 1-D parent).
+  if (s.size() > 1) {
+    const auto& src_s = src.shape();
+    // src shape must equal m_shape[1:]
+    bool shape_ok = (src_s.size() == s.size() - 1);
+    if (shape_ok)
+      for (size_t i = 0; i < src_s.size(); ++i)
+        if (src_s[i] != s[i + 1]) { shape_ok = false; break; }
+
+    if (!shape_ok)
+      throw std::invalid_argument(
+          "set_row: source shape does not match expected row shape "
+          "(numel matched but layout differs)");
+  }
+ 
+ 
+  std::copy(src.m_data.begin(), src.m_data.end(), m_data.begin() + row * row_stride);
+}
+
+// Allows exactly one -1 (as size_t max) to mean "infer this dimension".
+Tensor Tensor::reshape(const std::vector<size_t>& new_shape) const
+{
+  constexpr size_t INFER = static_cast<size_t>(-1);
+ 
+  size_t infer_idx  = new_shape.size(); // sentinel: no inferred dim
+  size_t known_prod = 1;
+ 
+  for (size_t i = 0; i < new_shape.size(); ++i)
+  {
+    if (new_shape[i] == INFER)
+    {
+      if (infer_idx != new_shape.size()) throw std::invalid_argument("reshape: only one dimension may be -1");
+      infer_idx = i;
+    }
+    else known_prod *= new_shape[i];
+  }
+ 
+  std::vector<size_t> resolved = new_shape;
+  if (infer_idx != new_shape.size())
+  {
+    if (numel() % known_prod != 0)
+      throw std::invalid_argument("reshape: total elements not divisible for inferred dimension");
+    resolved[infer_idx] = numel() / known_prod;
+  }
+ 
+  // Validate total matches
+  size_t total = 1;
+  for (size_t d : resolved) total *= d;
+  if (total != numel()) throw std::invalid_argument("reshape: new shape has different numel");
+ 
+  return Tensor(m_data, resolved);
 }
 
 size_t Tensor::compute_numel() const {
@@ -74,6 +160,33 @@ Tensor Tensor::add_rowwise(const Tensor& a, const Tensor& rowVec) {
   }
   
   return result;
+}
+
+// Gathers rows along axis 0 by an index list.
+// Input shape [N, ...rest] → output shape [indices.size(), ...rest]
+Tensor Tensor::gather(const std::vector<size_t>& indices) const {
+  const auto& s = m_shape;
+  if (s.empty()) throw std::runtime_error("gather: tensor has no shape");
+ 
+  size_t row_stride = numel() / s[0];
+ 
+  std::vector<size_t> out_shape = s;
+  out_shape[0] = indices.size();
+ 
+  std::vector<float> out_data(indices.size() * row_stride);
+ 
+  for (size_t i = 0; i < indices.size(); ++i)
+  {
+    size_t src_row = indices[i];
+    if (src_row >= s[0]) throw std::out_of_range("gather: index out of bounds");
+ 
+    std::copy(
+      m_data.begin() + src_row * row_stride,
+      m_data.begin() + src_row * row_stride + row_stride,
+      out_data.begin() + i * row_stride);
+  }
+ 
+  return Tensor(out_data, out_shape);
 }
 
 Tensor Tensor::reduce_sum_rows(const Tensor& a) {
@@ -199,4 +312,82 @@ Tensor Tensor::transpose(const Tensor& a) {
       result.m_data[j * result_shape[1] + i] = a.m_data[i * a.m_shape[1] + j];
   }
   return result;
+}
+
+float Tensor::sum(const Tensor& a) {
+  float acc = 0.0f;
+  const float* ptr = a.data();
+  size_t n = a.numel();
+  for (size_t i = 0; i < n; ++i) acc += ptr[i];
+  return acc;
+}
+
+Tensor Tensor::exp(const Tensor& a) {
+  std::vector<float> out(a.numel());
+  const float* ptr = a.data();
+  for (size_t i = 0; i < a.numel(); ++i) out[i] = std::exp(ptr[i]);
+  return Tensor(out, a.shape());
+}
+
+Tensor Tensor::log(const Tensor& a)
+{
+  constexpr float EPS = 1e-8f;
+  std::vector<float> out(a.numel());
+  const float* ptr = a.data();
+  for (size_t i = 0; i < a.numel(); ++i) out[i] = std::log(std::max(ptr[i], EPS));
+  return Tensor(out, a.shape());
+}
+
+Tensor Tensor::square(const Tensor& a) {
+  std::vector<float> out(a.numel());
+  const float* ptr = a.data();
+  for (size_t i = 0; i < a.numel(); ++i) out[i] = ptr[i] * ptr[i];
+  return Tensor(out, a.shape());
+}
+
+Tensor Tensor::clamp(const Tensor& a, float min_val, float max_val) {
+  std::vector<float> out(a.numel());
+  const float* ptr = a.data();
+  for (size_t i = 0; i < a.numel(); ++i) out[i] = std::min(std::max(ptr[i], min_val), max_val);
+  return Tensor(out, a.shape());
+}
+
+Tensor Tensor::minimum(const Tensor& a, const Tensor& b) {
+  if (a.shape() != b.shape()) throw std::invalid_argument("minimum: shape mismatch");
+  std::vector<float> out(a.numel());
+  const float* pa = a.data();
+  const float* pb = b.data();
+  for (size_t i = 0; i < a.numel(); ++i) out[i] = std::min(pa[i], pb[i]);
+  return Tensor(out, a.shape());
+}
+
+Tensor Tensor::maximum(const Tensor& a, const Tensor& b) {
+  if (a.shape() != b.shape()) throw std::invalid_argument("maximum: shape mismatch");
+  std::vector<float> out(a.numel());
+  const float* pa = a.data();
+  const float* pb = b.data();
+  for (size_t i = 0; i < a.numel(); ++i) out[i] = std::max(pa[i], pb[i]);
+  return Tensor(out, a.shape());
+}
+
+Tensor Tensor::zeros(const std::vector<size_t>& shape) {
+  return Tensor(shape); // constructor already zero-initialises
+}
+
+Tensor Tensor::from_scalar(float value) {
+  return Tensor(std::vector<float>{value}, {1});
+}
+
+float Tensor::std_val(const Tensor& a) {
+  if (a.numel() == 0) throw std::invalid_argument("std_val: empty tensor");
+  float m = Tensor::mean(a);
+  float acc = 0.0f;
+  const float* ptr = a.data();
+  size_t n = a.numel();
+  for (size_t i = 0; i < n; ++i)
+  {
+    float d = ptr[i] - m;
+    acc += d * d;
+  }
+  return std::sqrt(acc / static_cast<float>(n));
 }
