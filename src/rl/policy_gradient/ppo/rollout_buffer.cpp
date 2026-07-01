@@ -1,4 +1,4 @@
-#include "rollout_buffer.h"
+#include "rl/policy_gradient/ppo/rollout_buffer.h"
 #include "nn/tensor.h"
 
 #include <stdexcept>
@@ -88,10 +88,11 @@ void RolloutBuffer::compute_returns_and_advantages(
   if (next_value.numel() < num_environments || next_is_terminal.numel() < num_environments)
     throw std::invalid_argument("compute_returns_and_advantages: bootstrap tensors too small");
 
+  const float* next_done = next_is_terminal.data();
+
   // Per-environment carry state
   std::vector<float> last_adv(num_environments, 0.0f);
   std::vector<float> last_val(next_value.data(), next_value.data() + num_environments);
-  std::vector<float> last_done(next_is_terminal.data(), next_is_terminal.data() + num_environments);
 
   for (int t = static_cast<int>(current_step) - 1; t >= 0; --t) {
     Tensor V_row = values.get_row(t);
@@ -102,26 +103,23 @@ void RolloutBuffer::compute_returns_and_advantages(
     const float* r = r_row.data();
     const float* done = done_row.data();
 
-    std::vector<float> next_non_terminal(num_environments);
-    for (size_t e = 0; e < num_environments; ++e) next_non_terminal[e] = 1.0f - last_done[e];
-
     std::vector<float> adv_row(num_environments);
     std::vector<float> ret_row(num_environments);
 
     for (size_t e = 0; e < num_environments; ++e)
     {
-      // δ_t = r_t + γ·(1−done_{t+1})·V_{t+1} − V_t
-      float delta = r[e] + gamma * next_non_terminal[e] * last_val[e] - V[e];
+      bool is_last = (t == static_cast<int>(current_step) - 1);
 
-      // A_t = δ_t + γλ·(1−done_{t+1})·A_{t+1}
-      float adv   = delta + gamma * gae_lambda * next_non_terminal[e] * last_adv[e];
+      float non_terminal = is_last ? 1.0f - next_done[e] : 1.0f - done[e];
+      float delta = r[e] + gamma * non_terminal * last_val[e] - V[e];
+
+      float adv = delta + gamma * gae_lambda * non_terminal * last_adv[e];
 
       adv_row[e] = adv;
       ret_row[e] = adv + V[e];
 
       last_adv[e] = adv;
       last_val[e] = V[e];
-      last_done[e] = done[e]; // carries done_t → used as done_{t+1} in next iteration
     }
 
     advantages.set_row(t, Tensor(adv_row, {num_environments}));
@@ -147,12 +145,12 @@ std::vector<TransitionBatch> RolloutBuffer::get_shuffled_minibatches(size_t batc
   auto extract = [&](const Tensor& buf, size_t flat_idx) -> Tensor
   {
     size_t step = flat_idx / num_environments;
-    size_t env  = flat_idx % num_environments;
+    size_t env = flat_idx % num_environments;
     return buf.get_row(step).get_row(env);
   };
 
   // Pre-measure element sizes from the first index
-  size_t state_elem_n  = extract(states,  indices[0]).numel();
+  size_t state_elem_n = extract(states,  indices[0]).numel();
   size_t action_elem_n = extract(actions, indices[0]).numel();
 
   std::vector<TransitionBatch> batches;
@@ -161,7 +159,7 @@ std::vector<TransitionBatch> RolloutBuffer::get_shuffled_minibatches(size_t batc
   for (size_t start = 0; start < total; start += batch_size)
   {
     size_t end = std::min(start + batch_size, total);
-    size_t bs  = end - start;
+    size_t bs = end - start;
 
     std::vector<float> b_states(bs * state_elem_n);
     std::vector<float> b_actions(bs * action_elem_n);

@@ -391,3 +391,48 @@ float Tensor::std_val(const Tensor& a) {
   }
   return std::sqrt(acc / static_cast<float>(n));
 }
+
+Tensor Tensor::softmax(const Tensor& a) {
+  if (a.shape().size() != 2) throw std::invalid_argument("softmax: expected 2-D tensor [B, C]");
+ 
+  size_t B = a.shape()[0];
+  size_t C = a.shape()[1];
+  std::vector<float> out(B * C);
+  const float* ptr = a.data();
+ 
+  for (size_t b = 0; b < B; ++b)
+  {
+    const float* row = ptr + b * C;
+    float*       dst = out.data() + b * C;
+ 
+    // Find row max for numerical stability
+    float row_max = row[0];
+    for (size_t c = 1; c < C; ++c)
+      if (row[c] > row_max) row_max = row[c];
+ 
+    float sum_exp = 0.0f;
+    for (size_t c = 0; c < C; ++c)
+    {
+      dst[c] = std::exp(row[c] - row_max);
+      sum_exp += dst[c];
+    }
+    for (size_t c = 0; c < C; ++c) dst[c] /= sum_exp;
+  }
+ 
+  return Tensor(out, a.shape());
+}
+
+Tensor Tensor::sum_last_dim(const Tensor& a) {
+  if (a.shape().size() != 2) throw std::invalid_argument("sum_last_dim: expected 2-D tensor [B, C]");
+ 
+  size_t B = a.shape()[0];
+  size_t C = a.shape()[1];
+  std::vector<float> out(B, 0.0f);
+  const float* ptr = a.data();
+ 
+  for (size_t b = 0; b < B; ++b)
+    for (size_t c = 0; c < C; ++c)
+      out[b] += ptr[b * C + c];
+ 
+  return Tensor(out, {B});
+}

@@ -58,6 +58,10 @@ public:
   static Tensor from_scalar(float value); // shape {1}
   static float std_val(const Tensor& a);  // population std-dev of all elements
 
+  // Distribution
+  static Tensor softmax(const Tensor& a);
+  static Tensor sum_last_dim(const Tensor& a);
+
 private:
   std::vector<size_t> m_shape;
   std::vector<float> m_data;

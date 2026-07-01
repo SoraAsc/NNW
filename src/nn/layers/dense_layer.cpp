@@ -41,14 +41,6 @@ Tensor DenseLayer::backward(const Tensor& grad_output) {
   grad_biases = Tensor::reduce_sum_rows(grad); // [out_features]
   // dX = grad_output @ W -> [batch, out] @ [out, in] = [batch, in]
   Tensor grad_input = Tensor::matmul(grad, weights); // [batch_size, in_features]
-
-  // Average gradients over batch if batch dimension exists (i.e., input was 2D)
-  // this ensures consistent gradient scale regardless of batch size
-  if(grad.shape().size() == 2) {
-    float batch = static_cast<float>(grad.shape()[0]);
-    grad_weights = Tensor::mul_scalar(grad_weights, 1.0f / batch);
-    grad_biases = Tensor::mul_scalar(grad_biases, 1.0f / batch);
-  }
   return grad_input;
 };
 

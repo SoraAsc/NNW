@@ -43,7 +43,7 @@ public:
 
   ~PPOAgent() = default;
 
-  [[nodiscard]] StepOutput act(const Tensor& states) const;
+  [[nodiscard]] StepOutput collect_step(const Tensor& states) const;
 
   void store_transition(
     const Tensor& states,
@@ -53,8 +53,7 @@ public:
     const Tensor& is_terminals,
     const Tensor& values);
 
-  void train(const Tensor& next_value,
-             const Tensor& next_is_terminal);
+  void train(const Tensor& next_value, const Tensor& next_is_terminal);
 
   [[nodiscard]] RolloutBuffer& get_rollout_buffer() { return rollout_buffer; }
   [[nodiscard]] const RolloutBuffer& get_rollout_buffer() const { return rollout_buffer; }
