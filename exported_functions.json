@@ -53,5 +53,7 @@
   "_rl_ppo_free_agent",
   "_rl_ppo_collect_step",
   "_rl_ppo_store_transition",
-  "_rl_ppo_train"
+  "_rl_ppo_train",
+  "_malloc",
+  "_free"
 ]

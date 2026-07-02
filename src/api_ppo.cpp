@@ -53,13 +53,10 @@ RL_PPOAgent* rl_ppo_create_agent(
     float max_grad_norm,
     size_t epochs,
     size_t minibatch_size) {
-  if (!actor_model || !critic_model) {
-    return nullptr;
-  }
+  if (!actor_model || !critic_model) return nullptr;
+  
 
-  if (num_envs == 0 || rollout_steps == 0 || epochs == 0 || minibatch_size == 0) {
-    return nullptr;
-  }
+  if (num_envs == 0 || rollout_steps == 0 || epochs == 0 || minibatch_size == 0) return nullptr;
 
   auto* agent = new RL_PPOAgent();
   agent->actor_model = actor_model;
@@ -130,9 +127,8 @@ void rl_ppo_collect_step(
     float* out_actions,
     float* out_log_probs,
     float* out_values) {
-  if (!agent || !states || batch_size == 0) {
-    return;
-  }
+  if (!agent || !states || batch_size == 0) return;
+  
 
   Tensor states_t = make_state_tensor(states, batch_size, agent->state_dim);
   StepOutput out = agent->impl->collect_step(states_t);
@@ -141,23 +137,14 @@ void rl_ppo_collect_step(
   const float* lp_ptr = out.log_probs.data();
   const float* val_ptr = out.values.data();
 
-  if (out_actions) {
-    for (size_t i = 0; i < batch_size; ++i) {
-      out_actions[i] = act_ptr[i];
-    }
-  }
+  if (out_actions)
+    for (size_t i = 0; i < batch_size; ++i) out_actions[i] = act_ptr[i];
 
-  if (out_log_probs) {
-    for (size_t i = 0; i < batch_size; ++i) {
-      out_log_probs[i] = lp_ptr[i];
-    }
-  }
+  if (out_log_probs) 
+    for (size_t i = 0; i < batch_size; ++i) out_log_probs[i] = lp_ptr[i];
 
-  if (out_values) {
-    for (size_t i = 0; i < batch_size; ++i) {
-      out_values[i] = val_ptr[i];
-    }
-  }
+  if (out_values)
+    for (size_t i = 0; i < batch_size; ++i) out_values[i] = val_ptr[i];
 }
 
 void rl_ppo_store_transition(
@@ -183,15 +170,10 @@ void rl_ppo_store_transition(
   agent->impl->store_transition(states_t, actions_t, log_probs_t, rewards_t, terminals_t, values_t);
 }
 
-void rl_ppo_train(
-    RL_PPOAgent* agent,
-    const float* next_value,
-    size_t batch_size,
-    const float* next_terminal) {
-  if (!agent || !next_value || !next_terminal || batch_size == 0) {
-    return;
-  }
-
+void rl_ppo_train(RL_PPOAgent* agent, const float* next_value, size_t batch_size, const float* next_terminal) 
+{
+  if (!agent || !next_value || !next_terminal || batch_size == 0) return;
+  
   Tensor next_value_t = make_vector_tensor(next_value, batch_size);
   Tensor next_terminal_t = make_vector_tensor(next_terminal, batch_size);
   agent->impl->train(next_value_t, next_terminal_t);

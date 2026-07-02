@@ -13,10 +13,15 @@
     }
   },
   "scripts": {
-    "build": "tsc && cp -r src/libs dist/"
+    "prepare:dev": "mkdir -p src/libs && cp ../../build-wasm/nn.* src/libs/",
+    "prepare:dist": "mkdir -p dist/libs && cp ../../build-wasm/nn.* dist/libs/",
+    "build": "tsc",
+    "build:full": "pnpm build && pnpm prepare:dist",
+    "example": "pnpm prepare:dev && tsx examples/basic.ts"
   },
   "devDependencies": {
     "@types/node": "^20.19.40",
+    "tsx": "^4.22.4",
     "typescript": "^5.0.0"
   },
   "keywords": [

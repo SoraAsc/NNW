@@ -133,17 +133,16 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: bindings/typescript/pnpm-lock.yaml
 
-      - name: Prepare TS libs
-        run: |
-          mkdir -p bindings/typescript/src/libs
-          cp webgl_artifacts/nn.mjs bindings/typescript/src/libs/
-          cp webgl_artifacts/nn.wasm bindings/typescript/src/libs/
-
       - name: Build TypeScript
         working-directory: bindings/typescript
         run: |
           pnpm install
           pnpm run build
+
+      - name: Copy WASM runtime
+        run: |
+          mkdir -p bindings/typescript/dist/libs
+          cp webgl_artifacts/* bindings/typescript/dist/libs/
 
       - name: Upload TS artifact
         uses: actions/upload-artifact@v7
