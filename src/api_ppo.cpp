@@ -61,8 +61,8 @@ RL_PPOAgent* rl_ppo_create_agent(
   auto* agent = new RL_PPOAgent();
   agent->actor_model = actor_model;
   agent->critic_model = critic_model;
-  agent->state_dim = rl_model_get_input_dim(actor_model);
-  agent->num_actions = rl_model_get_output_dim(actor_model);
+  agent->state_dim = nn_get_input_dim(actor_model);
+  agent->num_actions = nn_get_output_dim(actor_model);
 
   Model* actor_impl = static_cast<Model*>(nn_model_get_internal(actor_model));
   Model* critic_impl = static_cast<Model*>(nn_model_get_internal(critic_model));

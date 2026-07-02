@@ -30,8 +30,8 @@ void nn_add_dense(NN_Model* model, size_t units, NN_Activation act) {
   {
     case NN_ACT_LINEAR: a = ActivationType::NONE; break;
     case NN_ACT_RELU: a = ActivationType::RELU; break;  
-    case NN_ACT_TANH: a = ActivationType::TANH; break;
     case NN_ACT_SIGMOID: a = ActivationType::SIGMOID; break;
+    case NN_ACT_TANH: a = ActivationType::TANH; break;
   }
   size_t in = model->output_dim;
   if(model->impl.layers().empty()) in = model->input_dim;
@@ -42,28 +42,6 @@ void nn_add_dense(NN_Model* model, size_t units, NN_Activation act) {
 size_t nn_get_input_dim(const NN_Model* model) { return model->input_dim; }
 size_t nn_get_output_dim(const  NN_Model* model) { return model->output_dim; }
 
-NN_Model* rl_model_create(size_t input_dim) {
-  return nn_create_model(input_dim);
-}
-
-void rl_model_free(NN_Model* model) { nn_free_model(model); }
-
-void rl_model_add_dense(NN_Model* model, size_t input_dim, size_t units, RL_Activation act) {
-  NN_Activation a = NN_ACT_LINEAR;
-  switch (act)
-  {
-    case RL_ACT_NONE:
-    case RL_ACT_LINEAR: a = NN_ACT_LINEAR; break;
-    case RL_ACT_RELU: a = NN_ACT_RELU; break;
-    case RL_ACT_TANH: a = NN_ACT_TANH; break;
-    case RL_ACT_SIGMOID: a = NN_ACT_SIGMOID; break;
-  }
-  (void)input_dim;
-  nn_add_dense(model, units, a);
-}
-
-size_t rl_model_get_input_dim(const NN_Model* model) { return nn_get_input_dim(model); }
-size_t rl_model_get_output_dim(const NN_Model* model) { return nn_get_output_dim(model); }
 void* nn_model_get_internal(NN_Model* model) { return model ? &model->impl : nullptr; }
 
 // Trainer
