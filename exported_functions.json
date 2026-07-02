@@ -13,7 +13,7 @@
   "_rl_model_add_dense",
   "_rl_model_get_input_dim",
   "_rl_model_get_output_dim",
-  "_rl_model_get_internal",
+  "_nn_model_get_internal",
   "_rl_create_qtable",
   "_rl_free_qtable",
   "_rl_get_qtable",

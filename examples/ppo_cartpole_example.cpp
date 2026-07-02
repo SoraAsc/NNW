@@ -82,15 +82,15 @@ int main()
   constexpr float ENTROPY_COEF = 0.01f;
   constexpr float MAX_GRAD_NORM = 0.5f;
 
-  RL_Model* actor = rl_model_create(STATE_DIM);
-  rl_model_add_dense(actor, STATE_DIM, 64, RL_ACT_TANH);
-  rl_model_add_dense(actor, 64, 64, RL_ACT_TANH);
-  rl_model_add_dense(actor, 64, NUM_ACTIONS, RL_ACT_NONE);
+  NN_Model* actor = nn_create_model(STATE_DIM);
+  nn_add_dense(actor, 64, NN_ACT_TANH);
+  nn_add_dense(actor, 64, NN_ACT_TANH);
+  nn_add_dense(actor, NUM_ACTIONS, NN_ACT_LINEAR);
 
-  RL_Model* critic = rl_model_create(STATE_DIM);
-  rl_model_add_dense(critic, STATE_DIM, 64, RL_ACT_TANH);
-  rl_model_add_dense(critic, 64, 64, RL_ACT_TANH);
-  rl_model_add_dense(critic, 64, 1, RL_ACT_NONE);
+  NN_Model* critic = nn_create_model(STATE_DIM);
+  nn_add_dense(critic, 64, NN_ACT_TANH);
+  nn_add_dense(critic, 64, NN_ACT_TANH);
+  nn_add_dense(critic, 1, NN_ACT_LINEAR);
 
   RL_PPOAgent* agent = rl_ppo_create_agent(
     actor,
@@ -111,8 +111,8 @@ int main()
   );
 
   if (!agent) {
-    rl_model_free(actor);
-    rl_model_free(critic);
+    nn_free_model(actor);
+    nn_free_model(critic);
     std::cerr << "Failed to create PPO agent\n";
     return 1;
   }
@@ -216,8 +216,8 @@ int main()
   }
 
   rl_ppo_free_agent(agent);
-  rl_model_free(actor);
-  rl_model_free(critic);
+  nn_free_model(actor);
+  nn_free_model(critic);
 
   std::cout << "\nTraining complete.\n";
   return 0;

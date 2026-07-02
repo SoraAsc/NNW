@@ -25,8 +25,8 @@ extern "C" {
   } RL_OptimizerType;
 
   API RL_PPOAgent* rl_ppo_create_agent(
-    RL_Model* actor_model,
-    RL_Model* critic_model,
+    NN_Model* actor_model,
+    NN_Model* critic_model,
     RL_ActionSpaceType action_space,
     RL_OptimizerType optimizer_type,
     size_t num_envs,

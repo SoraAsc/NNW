@@ -12,8 +12,8 @@
 #include <vector>
 
 struct RL_PPOAgent {
-  RL_Model* actor_model = nullptr;
-  RL_Model* critic_model = nullptr;
+  NN_Model* actor_model = nullptr;
+  NN_Model* critic_model = nullptr;
   std::unique_ptr<ActorCriticPolicy> policy;
   std::unique_ptr<Optimizer> actor_optimizer;
   std::unique_ptr<Optimizer> critic_optimizer;
@@ -38,8 +38,8 @@ Tensor make_vector_tensor(const float* values, size_t count) {
 }  // namespace
 
 RL_PPOAgent* rl_ppo_create_agent(
-    RL_Model* actor_model,
-    RL_Model* critic_model,
+    NN_Model* actor_model,
+    NN_Model* critic_model,
     RL_ActionSpaceType action_space,
     RL_OptimizerType optimizer_type,
     size_t num_envs,
@@ -67,8 +67,8 @@ RL_PPOAgent* rl_ppo_create_agent(
   agent->state_dim = rl_model_get_input_dim(actor_model);
   agent->num_actions = rl_model_get_output_dim(actor_model);
 
-  Model* actor_impl = static_cast<Model*>(rl_model_get_internal(actor_model));
-  Model* critic_impl = static_cast<Model*>(rl_model_get_internal(critic_model));
+  Model* actor_impl = static_cast<Model*>(nn_model_get_internal(actor_model));
+  Model* critic_impl = static_cast<Model*>(nn_model_get_internal(critic_model));
   if (!actor_impl || !critic_impl) {
     delete agent;
     return nullptr;
