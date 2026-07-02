@@ -1,9 +1,5 @@
 // Minimal PPO example for CartPole-v1.
-#include "nn/layers/dense_layer.h"
-#include "nn/model.h"
-#include "nn/training/optimizer/adamw_optimizer.h"
-#include "rl/policy_gradient/ppo/actor_critic_policy.h"
-#include "rl/policy_gradient/ppo/ppo_agent.h"
+#include "api_ppo.h"
 
 #include <algorithm>
 #include <cmath>
@@ -68,16 +64,6 @@ struct CartPoleEnv {
   std::vector<float> state() const { return {x, x_dot, theta, theta_dot}; }
 };
 
-Tensor pack_obs(const std::vector<float>& obs, size_t num_envs, size_t state_dim)
-{
-  return Tensor(obs, {num_envs, state_dim});
-}
-
-Tensor pack_scalar(const std::vector<float>& values)
-{
-  return Tensor(values, {values.size()});
-}
-
 int main()
 {
   constexpr size_t STATE_DIM = 4;
@@ -96,29 +82,24 @@ int main()
   constexpr float ENTROPY_COEF = 0.01f;
   constexpr float MAX_GRAD_NORM = 0.5f;
 
-  Model actor_net;
-  actor_net.add_layer(new DenseLayer(STATE_DIM, 64, ActivationType::TANH));
-  actor_net.add_layer(new DenseLayer(64, 64, ActivationType::TANH));
-  actor_net.add_layer(new DenseLayer(64, NUM_ACTIONS, ActivationType::NONE));
+  RL_Model* actor = rl_model_create(STATE_DIM);
+  rl_model_add_dense(actor, STATE_DIM, 64, RL_ACT_TANH);
+  rl_model_add_dense(actor, 64, 64, RL_ACT_TANH);
+  rl_model_add_dense(actor, 64, NUM_ACTIONS, RL_ACT_NONE);
 
-  Model critic_net;
-  critic_net.add_layer(new DenseLayer(STATE_DIM, 64, ActivationType::TANH));
-  critic_net.add_layer(new DenseLayer(64, 64, ActivationType::TANH));
-  critic_net.add_layer(new DenseLayer(64, 1, ActivationType::NONE));
+  RL_Model* critic = rl_model_create(STATE_DIM);
+  rl_model_add_dense(critic, STATE_DIM, 64, RL_ACT_TANH);
+  rl_model_add_dense(critic, 64, 64, RL_ACT_TANH);
+  rl_model_add_dense(critic, 64, 1, RL_ACT_NONE);
 
-  AdamW actor_opt(actor_net, LR);
-  AdamW critic_opt(critic_net, LR);
-
-  ActorCriticPolicy policy(actor_net, critic_net, ActionSpaceType::Discrete);
-
-  PPOAgent agent(
-    policy,
-    actor_opt,
-    critic_opt,
+  RL_PPOAgent* agent = rl_ppo_create_agent(
+    actor,
+    critic,
+    RL_ACTION_DISCRETE,
+    RL_OPT_ADAMW,
     NUM_ENVS,
     ROLLOUT_STEPS,
-    {STATE_DIM},
-    {},
+    LR,
     GAMMA,
     GAE_LAMBDA,
     CLIP_RANGE,
@@ -128,7 +109,13 @@ int main()
     EPOCHS,
     MINIBATCH_SIZE
   );
-  agent.get_rollout_buffer().set_num_environments(NUM_ENVS);
+
+  if (!agent) {
+    rl_model_free(actor);
+    rl_model_free(critic);
+    std::cerr << "Failed to create PPO agent\n";
+    return 1;
+  }
 
   std::vector<CartPoleEnv> envs;
   envs.reserve(NUM_ENVS);
@@ -156,12 +143,10 @@ int main()
     std::vector<float> next_done(NUM_ENVS, 0.0f);
 
     for (size_t step = 0; step < ROLLOUT_STEPS; ++step) {
-      Tensor obs_t = pack_obs(obs, NUM_ENVS, STATE_DIM);
-      StepOutput out = agent.collect_step(obs_t);
-
-      const float* act_ptr = out.actions.data();
-      const float* lp_ptr = out.log_probs.data();
-      const float* val_ptr = out.values.data();
+      std::vector<float> actions(NUM_ENVS, 0.0f);
+      std::vector<float> log_probs(NUM_ENVS, 0.0f);
+      std::vector<float> values(NUM_ENVS, 0.0f);
+      rl_ppo_collect_step(agent, obs.data(), NUM_ENVS, actions.data(), log_probs.data(), values.data());
 
       std::vector<float> rewards(NUM_ENVS);
       std::vector<float> dones(NUM_ENVS);
@@ -169,7 +154,7 @@ int main()
 
       for (size_t e = 0; e < NUM_ENVS; ++e)
       {
-        int action = static_cast<int>(act_ptr[e]);
+        int action = static_cast<int>(actions[e]);
         auto [nobs, rew, done] = envs[e].step(action);
 
         rewards[e] = rew;
@@ -191,23 +176,26 @@ int main()
         } else std::copy(nobs.begin(), nobs.end(), next_obs.begin() + e * STATE_DIM);
       }
 
-      agent.store_transition(
-        obs_t,
-        out.actions,
-        out.log_probs,
-        pack_scalar(rewards),
-        pack_scalar(dones),
-        out.values
-      );
+      rl_ppo_store_transition(
+        agent,
+        obs.data(),
+        NUM_ENVS,
+        actions.data(),
+        log_probs.data(),
+        rewards.data(),
+        dones.data(),
+        values.data());
 
       obs.swap(next_obs);
       total_collected += NUM_ENVS;
     }
 
-    Tensor last_obs_t = pack_obs(obs, NUM_ENVS, STATE_DIM);
-    StepOutput boot = agent.collect_step(last_obs_t);
+    std::vector<float> boot_values(NUM_ENVS, 0.0f);
+    std::vector<float> boot_actions(NUM_ENVS, 0.0f);
+    std::vector<float> boot_log_probs(NUM_ENVS, 0.0f);
+    rl_ppo_collect_step(agent, obs.data(), NUM_ENVS, boot_actions.data(), boot_log_probs.data(), boot_values.data());
 
-    agent.train(boot.values, pack_scalar(next_done));
+    rl_ppo_train(agent, boot_values.data(), NUM_ENVS, next_done.data());
 
     if (total_collected % 10'000 < NUM_ENVS * ROLLOUT_STEPS) {
       float mean_rew = 0.0f;
@@ -226,6 +214,10 @@ int main()
       }
     }
   }
+
+  rl_ppo_free_agent(agent);
+  rl_model_free(actor);
+  rl_model_free(critic);
 
   std::cout << "\nTraining complete.\n";
   return 0;

@@ -13,6 +13,7 @@
 
 // Types
 struct NN_Model { Model impl; size_t input_dim = 0; size_t output_dim = 0; };
+struct RL_Model { Model impl; size_t input_dim = 0; size_t output_dim = 0; };
 struct NN_Trainer { Trainer* impl = nullptr; ~NN_Trainer() { delete impl; } };
 
 // Model
@@ -41,6 +42,34 @@ void nn_add_dense(NN_Model* model, size_t units, NN_Activation act) {
 
 size_t nn_get_input_dim(const NN_Model* model) { return model->input_dim; }
 size_t nn_get_output_dim(const  NN_Model* model) { return model->output_dim; }
+
+RL_Model* rl_model_create(size_t input_dim) {
+  RL_Model* model = new RL_Model();
+  model->input_dim = input_dim;
+  return model;
+}
+
+void rl_model_free(RL_Model* model) { delete model; }
+
+void rl_model_add_dense(RL_Model* model, size_t input_dim, size_t units, RL_Activation act) {
+  ActivationType a = ActivationType::NONE;
+  switch (act)
+  {
+    case RL_ACT_NONE:
+    case RL_ACT_LINEAR: a = ActivationType::NONE; break;
+    case RL_ACT_RELU: a = ActivationType::RELU; break;
+    case RL_ACT_TANH: a = ActivationType::TANH; break;
+    case RL_ACT_SIGMOID: a = ActivationType::SIGMOID; break;
+  }
+  size_t in = model->output_dim;
+  if (model->impl.layers().empty()) in = input_dim == 0 ? model->input_dim : input_dim;
+  model->impl.add_layer(new DenseLayer(in, units, a));
+  model->output_dim = units;
+}
+
+size_t rl_model_get_input_dim(const RL_Model* model) { return model->input_dim; }
+size_t rl_model_get_output_dim(const RL_Model* model) { return model->output_dim; }
+void* rl_model_get_internal(RL_Model* model) { return model ? &model->impl : nullptr; }
 
 // Trainer
 NN_Trainer* nn_create_trainer(NN_Model* model, NN_Optimizer opt, NN_Loss loss, const NN_TrainerConfig* cfg) {

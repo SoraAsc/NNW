@@ -8,6 +8,12 @@
   "_nn_free_trainer",
   "_nn_train_fit",
   "_nn_predict",
+  "_rl_model_create",
+  "_rl_model_free",
+  "_rl_model_add_dense",
+  "_rl_model_get_input_dim",
+  "_rl_model_get_output_dim",
+  "_rl_model_get_internal",
   "_rl_create_qtable",
   "_rl_free_qtable",
   "_rl_get_qtable",
@@ -42,5 +48,10 @@
   "_rl_qtable_save",
   "_rl_qtable_load",
   "_rl_save_agent",
-  "_rl_load_agent"
+  "_rl_load_agent",
+  "_rl_ppo_create_agent",
+  "_rl_ppo_free_agent",
+  "_rl_ppo_collect_step",
+  "_rl_ppo_store_transition",
+  "_rl_ppo_train"
 ]
