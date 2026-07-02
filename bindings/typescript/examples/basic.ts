@@ -1,16 +1,7 @@
-// Minimal PPO example for CartPole-v1 (Node/TypeScript port of the C++ example).
-import { createNNWModule } from "../src/index.js";
+// Minimal PPO example for CartPole-v1, using the high-level NNW API.
+import { createNNW } from "../src/index.js";
 
-// ---- Activation / enum constants (mirroring the C++ header) ----
-const NN_ACT_LINEAR = 0;
-// const NN_ACT_SIGMOID = 1;
-// const NN_ACT_RELU = 2;
-const NN_ACT_TANH = 3;
-
-const RL_ACTION_DISCRETE = 0;
-const RL_OPT_ADAMW = 1;
-
-// ---- CartPole-v1 environment (port of the C++ CartPoleEnv struct) ----
+// ---- CartPole-v1 environment  ----
 class CartPoleEnv {
   static readonly GRAVITY = 9.8;
   static readonly MASSCART = 1.0;
@@ -37,7 +28,6 @@ class CartPoleEnv {
     this.reset();
   }
 
-  // Simple deterministic PRNG (mulberry32) so results are reproducible per env.
   private nextRandom(): number {
     let t = (this.rngState += 0x6d2b79f5);
     t = Math.imul(t ^ (t >>> 15), t | 1);
@@ -95,86 +85,58 @@ async function main() {
   const NUM_ENVS = 8;
   const ROLLOUT_STEPS = 128;
   const TOTAL_STEPS = 200_000;
-  const EPOCHS = 4;
-  const MINIBATCH_SIZE = 64;
 
-  const LR = 3e-4;
-  const GAMMA = 0.99;
-  const GAE_LAMBDA = 0.95;
-  const CLIP_RANGE = 0.2;
-  const VALUE_COEF = 0.5;
-  const ENTROPY_COEF = 0.01;
-  const MAX_GRAD_NORM = 0.5;
+  const nnw = await createNNW();
 
-  const lib = await createNNWModule();
+  const actor = nnw
+    .createModel(STATE_DIM)
+    .addDense(64, "tanh")
+    .addDense(64, "tanh")
+    .addDense(NUM_ACTIONS, "linear");
 
-  const actor = lib.createModel(STATE_DIM);
-  lib.addDense(actor, 64, NN_ACT_TANH);
-  lib.addDense(actor, 64, NN_ACT_TANH);
-  lib.addDense(actor, NUM_ACTIONS, NN_ACT_LINEAR);
+  const critic = nnw
+    .createModel(STATE_DIM)
+    .addDense(64, "tanh")
+    .addDense(64, "tanh")
+    .addDense(1, "linear");
 
-  const critic = lib.createModel(STATE_DIM);
-  lib.addDense(critic, 64, NN_ACT_TANH);
-  lib.addDense(critic, 64, NN_ACT_TANH);
-  lib.addDense(critic, 1, NN_ACT_LINEAR);
+  const agent = nnw.createPPOAgent(actor, critic, {
+    actionSpace: "discrete",
+    optimizer: "adamw",
+    numEnvs: NUM_ENVS,
+    rolloutSteps: ROLLOUT_STEPS,
+    minibatchSize: 64,
+    // learningRate, gamma, gaeLambda, clipRange, etc. all can be overridden here if needed.
+  });
 
-  const agent = lib.createPPOAgent(
-    actor,
-    critic,
-    RL_ACTION_DISCRETE,
-    RL_OPT_ADAMW,
-    NUM_ENVS,
-    ROLLOUT_STEPS,
-    LR,
-    GAMMA,
-    GAE_LAMBDA,
-    CLIP_RANGE,
-    VALUE_COEF,
-    ENTROPY_COEF,
-    MAX_GRAD_NORM,
-    EPOCHS,
-    MINIBATCH_SIZE,
-  );
-
-  if (!agent) {
-    lib.freeModel(actor);
-    lib.freeModel(critic);
-    console.error("Failed to create PPO agent");
-    return;
-    // process.exit(1);
-  }
-
-  const envs: CartPoleEnv[] = [];
-  for (let i = 0; i < NUM_ENVS; ++i) envs.push(new CartPoleEnv(i * 42));
+  const envs = Array.from({ length: NUM_ENVS }, (_, i) => new CartPoleEnv(i * 42));
 
   let obs: number[] = new Array(NUM_ENVS * STATE_DIM).fill(0);
-  for (let i = 0; i < NUM_ENVS; ++i) {
-    const s = envs[i].reset();
+  envs.forEach((env, i) => {
+    const s = env.reset();
     for (let d = 0; d < STATE_DIM; ++d) obs[i * STATE_DIM + d] = s[d];
-  }
+  });
 
   let totalCollected = 0;
   let episodeCount = 0;
   const epRewards: number[] = [];
   const envEpReward = new Array(NUM_ENVS).fill(0);
 
-  console.log(
-    `Training PPO on CartPole-v1\n  envs=${NUM_ENVS}  rollout=${ROLLOUT_STEPS}  total_steps=${TOTAL_STEPS}\n`,
-  );
+  console.log(`Training PPO on CartPole-v1\n  envs=${NUM_ENVS}  rollout=${ROLLOUT_STEPS}  total_steps=${TOTAL_STEPS}\n`);
 
   while (totalCollected < TOTAL_STEPS) {
     const nextDone = new Array(NUM_ENVS).fill(0);
 
     for (let step = 0; step < ROLLOUT_STEPS; ++step) {
-      const { actions, logProbs, values } = lib.ppoCollectStep(agent, obs, NUM_ENVS);
+      const { actions, logProbs, values } = agent.collectStep(obs, NUM_ENVS);
 
       const rewards = new Array(NUM_ENVS).fill(0);
       const dones = new Array(NUM_ENVS).fill(0);
       const nextObs: number[] = new Array(NUM_ENVS * STATE_DIM).fill(0);
 
-      for (let e = 0; e < NUM_ENVS; ++e) {
+      envs.forEach((env, e) => {
         const action = Math.round(actions[e]);
-        const { obs: nobs, reward, done } = envs[e].step(action);
+        const { obs: nobs, reward, done } = env.step(action);
 
         rewards[e] = reward;
         dones[e] = done ? 1 : 0;
@@ -183,35 +145,27 @@ async function main() {
         if (done) {
           epRewards.push(envEpReward[e]);
           if (epRewards.length > 100) epRewards.shift();
-
           envEpReward[e] = 0;
           ++episodeCount;
 
-          const resetObs = envs[e].reset();
+          const resetObs = env.reset();
           for (let d = 0; d < STATE_DIM; ++d) nextObs[e * STATE_DIM + d] = resetObs[d];
         } else {
           for (let d = 0; d < STATE_DIM; ++d) nextObs[e * STATE_DIM + d] = nobs[d];
         }
-      }
+      });
 
-      lib.ppoStoreTransition(agent, obs, NUM_ENVS, actions, logProbs, rewards, dones, values);
-
+      agent.storeTransition(obs, NUM_ENVS, actions, logProbs, rewards, dones, values);
       obs = nextObs;
       totalCollected += NUM_ENVS;
     }
 
-    const { values: bootValues } = lib.ppoCollectStep(agent, obs, NUM_ENVS);
-    lib.ppoTrain(agent, bootValues, nextDone);
+    const { values: bootValues } = agent.collectStep(obs, NUM_ENVS);
+    agent.train(bootValues, nextDone);
 
     if (totalCollected % 10_000 < NUM_ENVS * ROLLOUT_STEPS) {
-      let meanRew = 0;
-      if (epRewards.length > 0) {
-        meanRew = epRewards.reduce((a, b) => a + b, 0) / epRewards.length;
-      }
-
-      console.log(
-        `steps=${totalCollected}  episodes=${episodeCount}  mean_ep_reward(last100)=${meanRew.toFixed(2)}`,
-      );
+      const meanRew = epRewards.length ? epRewards.reduce((a, b) => a + b, 0) / epRewards.length : 0;
+      console.log(`steps=${totalCollected}  episodes=${episodeCount}  mean_ep_reward(last100)=${meanRew.toFixed(2)}`);
 
       if (meanRew >= 195.0 && epRewards.length >= 100) {
         console.log(`\nCartPole solved in ${totalCollected} steps!`);
@@ -220,15 +174,13 @@ async function main() {
     }
   }
 
-  lib.freePPOAgent(agent);
-  lib.freeModel(actor);
-  lib.freeModel(critic);
+  agent.dispose();
+  actor.dispose();
+  critic.dispose();
 
   console.log("\nTraining complete.");
 }
 
 main().catch((err) => {
   console.error(err);
-  return;
-//   process.exit(1);
 });
