@@ -96,6 +96,8 @@ int main()
     actor,
     critic,
     RL_ACTION_DISCRETE,
+    nullptr,
+    0,
     RL_OPT_ADAMW,
     NUM_ENVS,
     ROLLOUT_STEPS,

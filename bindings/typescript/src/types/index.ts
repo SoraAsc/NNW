@@ -25,6 +25,8 @@ export type OptimizerLike = Optimizer | "sgd" | "adamw";
 
 export interface PPOAgentConfig {
   actionSpace: ActionSpaceLike;
+  /** Category count for each MultiDiscrete sub-action. Required for multiDiscrete. */
+  multiDiscreteSizes?: number[];
   /** @default "adamw" */
   optimizer?: OptimizerLike;
   numEnvs: number;

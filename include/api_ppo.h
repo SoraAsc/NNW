@@ -28,6 +28,8 @@ extern "C" {
     NN_Model* actor_model,
     NN_Model* critic_model,
     RL_ActionSpaceType action_space,
+    const size_t* action_sizes,
+    size_t action_sizes_count,
     RL_OptimizerType optimizer_type,
     size_t num_envs,
     size_t rollout_steps,

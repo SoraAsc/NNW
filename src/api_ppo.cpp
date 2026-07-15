@@ -20,7 +20,10 @@ struct RL_PPOAgent {
   std::unique_ptr<PPOAgent> impl;
 
   size_t state_dim = 0;
-  size_t num_actions = 0;
+  size_t actor_output_dim = 0;
+  size_t action_dim = 0;
+  RL_ActionSpaceType action_space = RL_ACTION_DISCRETE;
+  std::vector<size_t> discrete_sizes;
 };
 
 namespace {
@@ -35,12 +38,19 @@ Tensor make_vector_tensor(const float* values, size_t count) {
   return Tensor(data, {count});
 }
 
+Tensor make_matrix_tensor(const float* values, size_t rows, size_t cols) {
+  std::vector<float> data(values, values + rows * cols);
+  return Tensor(data, {rows, cols});
+}
+
 }  // namespace
 
 RL_PPOAgent* rl_ppo_create_agent(
     NN_Model* actor_model,
     NN_Model* critic_model,
     RL_ActionSpaceType action_space,
+    const size_t* action_sizes,
+    size_t action_sizes_count,
     RL_OptimizerType optimizer_type,
     size_t num_envs,
     size_t rollout_steps,
@@ -62,7 +72,8 @@ RL_PPOAgent* rl_ppo_create_agent(
   agent->actor_model = actor_model;
   agent->critic_model = critic_model;
   agent->state_dim = nn_get_input_dim(actor_model);
-  agent->num_actions = nn_get_output_dim(actor_model);
+  agent->actor_output_dim = nn_get_output_dim(actor_model);
+  agent->action_space = action_space;
 
   Model* actor_impl = static_cast<Model*>(nn_model_get_internal(actor_model));
   Model* critic_impl = static_cast<Model*>(nn_model_get_internal(critic_model));
@@ -83,18 +94,36 @@ RL_PPOAgent* rl_ppo_create_agent(
       break;
   }
 
-  ActionSpaceType space = ActionSpaceType::Discrete;
+  std::unique_ptr<ActionDistribution> distribution;
   switch (action_space) {
-    case RL_ACTION_CONTINUOUS: space = ActionSpaceType::Continuous; break;
-    case RL_ACTION_MULTIDISCRETE: space = ActionSpaceType::MultiDiscrete; break;
-    case RL_ACTION_MULTIBINARY: space = ActionSpaceType::MultiBinary; break;
-    default: case RL_ACTION_DISCRETE: space = ActionSpaceType::Discrete; break;
+    case RL_ACTION_CONTINUOUS:
+      distribution = make_squashed_gaussian_distribution(agent->actor_output_dim, -1.0f);
+      break;
+    case RL_ACTION_MULTIDISCRETE:
+      if (!action_sizes || action_sizes_count == 0) { delete agent; return nullptr; }
+      agent->discrete_sizes.assign(action_sizes, action_sizes + action_sizes_count);
+      distribution = make_multi_categorical_distribution(agent->discrete_sizes);
+      break;
+    case RL_ACTION_MULTIBINARY:
+      distribution = make_bernoulli_distribution();
+      break;
+    default:
+    case RL_ACTION_DISCRETE:
+      distribution = make_categorical_distribution();
+      break;
   }
 
-  agent->policy = std::make_unique<ActorCriticPolicy>(*actor_impl, *critic_impl, space);
+  try {
+    agent->policy = std::make_unique<ActorCriticPolicy>(
+        *actor_impl, *critic_impl, std::move(distribution), agent->actor_output_dim);
+    agent->action_dim = agent->policy->action_dim();
+  } catch (...) {
+    delete agent;
+    return nullptr;
+  }
 
   std::vector<size_t> state_shape{agent->state_dim};
-  std::vector<size_t> action_shape{};
+  std::vector<size_t> action_shape{agent->action_dim};
 
   agent->impl = std::make_unique<PPOAgent>(
       *agent->policy,
@@ -136,9 +165,10 @@ void rl_ppo_collect_step(
   const float* act_ptr = out.actions.data();
   const float* lp_ptr = out.log_probs.data();
   const float* val_ptr = out.values.data();
+  size_t action_count = out.actions.numel();
 
   if (out_actions)
-    for (size_t i = 0; i < batch_size; ++i) out_actions[i] = act_ptr[i];
+    for (size_t i = 0; i < action_count; ++i) out_actions[i] = act_ptr[i];
 
   if (out_log_probs) 
     for (size_t i = 0; i < batch_size; ++i) out_log_probs[i] = lp_ptr[i];
@@ -161,7 +191,7 @@ void rl_ppo_store_transition(
   }
 
   Tensor states_t = make_state_tensor(states, batch_size, agent->state_dim);
-  Tensor actions_t = make_vector_tensor(actions, batch_size);
+  Tensor actions_t = make_matrix_tensor(actions, batch_size, agent->action_dim);
   Tensor log_probs_t = make_vector_tensor(log_probs, batch_size);
   Tensor rewards_t = make_vector_tensor(rewards, batch_size);
   Tensor terminals_t = make_vector_tensor(terminals, batch_size);

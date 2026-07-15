@@ -1,3 +1,11 @@
+/**
+ * Low-level wasm plumbing: module loading + raw memory helpers.
+ *
+ * Nothing in this file is meant to be imported by end users directly —
+ * it's consumed by `src/nn` and `src/rl` to build the friendly public API
+ * exposed from `src/index.ts`.
+ */
+
 export interface EmscriptenModuleLike {
   _malloc: (size: number) => number;
   _free: (ptr: number) => void;
@@ -30,7 +38,11 @@ export interface EmscriptenModuleLike {
   ) => void;
   _rl_ppo_train: (agent: number, nextValue: number, batchSize: number, nextTerminal: number) => void;
 
+  /** Present only if nn.mjs was built with -sEXPORTED_RUNTIME_METHODS=getExceptionMessage */
+  getExceptionMessage?: (excPtr: number) => string;
+
   HEAPF32: Float32Array;
+  HEAPU32: Uint32Array;
   HEAPU8: Uint8Array;
 }
 
@@ -39,7 +51,8 @@ type EmscriptenFactory = (options?: Record<string, unknown>) => Promise<Emscript
 /** Loads the compiled wasm module (nn.mjs) relative to this package. */
 export async function loadWasmModule(): Promise<EmscriptenModuleLike> {
   const moduleUrl = new URL("../libs/nn.mjs", import.meta.url);
-  const factory = ((await import(moduleUrl.href)) as { default: EmscriptenFactory }).default;
+  const factory = ((await import(/* @vite-ignore */ moduleUrl.href)) as { default: EmscriptenFactory })
+    .default;
   return factory({
     locateFile: (name: string) => {
       if (name.endsWith(".wasm")) return new URL("../libs/" + name, import.meta.url).href;
@@ -48,6 +61,11 @@ export async function loadWasmModule(): Promise<EmscriptenModuleLike> {
   });
 }
 
+/**
+ * Thin RAII-ish helper around the module's linear memory. Every array
+ * handed to the wasm side goes through here so allocation/free is never
+ * duplicated (and never forgotten) in the higher-level classes.
+ */
 export class WasmMemory {
   constructor(private readonly mod: EmscriptenModuleLike) {}
 
@@ -56,6 +74,14 @@ export class WasmMemory {
     const bytes = values.length * Float32Array.BYTES_PER_ELEMENT;
     const ptr = this.mod._malloc(bytes);
     new Float32Array(this.mod.HEAPF32.buffer, ptr, values.length).set(values);
+    return ptr;
+  }
+
+  /** Allocates an unsigned 32-bit buffer (WASM size_t) and copies values. */
+  allocSizeArray(values: number[]): number {
+    const bytes = values.length * Uint32Array.BYTES_PER_ELEMENT;
+    const ptr = this.mod._malloc(bytes);
+    new Uint32Array(this.mod.HEAPU32.buffer, ptr, values.length).set(values);
     return ptr;
   }
 
@@ -95,5 +121,34 @@ export class WasmBinding {
   static async create(): Promise<WasmBinding> {
     const raw = await loadWasmModule();
     return new WasmBinding(raw);
+  }
+
+  /**
+   * Runs `fn`, and if the wasm side throws a C++ exception, rethrows it as a
+   * regular Error with a readable message instead of the opaque
+   * `CppException { excPtr }` emscripten normally surfaces.
+   */
+  call<T>(fn: () => T): T {
+    try {
+      return fn();
+    } catch (err) {
+      throw new Error(this.describeException(err));
+    }
+  }
+
+  private describeException(err: unknown): string {
+    const excPtr = (err as { excPtr?: number } | null)?.excPtr;
+    if (typeof excPtr === "number") {
+      if (typeof this.raw.getExceptionMessage === "function") {
+        return `NNW wasm error: ${this.raw.getExceptionMessage(excPtr)}`;
+      }
+      return (
+        `NNW wasm threw a C++ exception (ptr=${excPtr}) but the build doesn't export ` +
+        `getExceptionMessage, so the message can't be decoded here. Rebuild nn.mjs with ` +
+        `emcc flag -sEXPORTED_RUNTIME_METHODS=getExceptionMessage (and -fexceptions) to get ` +
+        `readable error messages.`
+      );
+    }
+    return String(err);
   }
 }

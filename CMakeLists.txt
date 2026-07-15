@@ -30,7 +30,7 @@ if(EMSCRIPTEN)
     "-sWASM=1"
     "-sALLOW_MEMORY_GROWTH=1"
     "-sEXPORTED_FUNCTIONS=@${CMAKE_CURRENT_SOURCE_DIR}/exported_functions.json"
-    "-sEXPORTED_RUNTIME_METHODS=['HEAPF32','HEAPU8','HEAP32','ccall','cwrap']"
+    "-sEXPORTED_RUNTIME_METHODS=['HEAPF32','HEAPU8','HEAP32','HEAPU32','ccall','cwrap', 'getExceptionMessage']"
     "-sNO_DISABLE_EXCEPTION_CATCHING"
     "--no-entry"
   )

@@ -100,15 +100,12 @@ float entropy_loss(const Tensor& entropy)
 Tensor grad_actor_loss(const Tensor& new_log_probs,
                         const Tensor& old_log_probs,
                         const Tensor& advantages,
-                        float clip_range,
-                        float entropy_coef,
-                        const Tensor& entropy_grad_log_prob)
+                        float clip_range)
 {
   size_t N = new_log_probs.numel();
   const float* nlp = new_log_probs.data();
   const float* olp = old_log_probs.data();
   const float* adv = advantages.data();
-  const float* eg  = entropy_grad_log_prob.data(); // dH/d(log_prob), shape [B]
 
   std::vector<float> grad(N);
   float inv_N = 1.0f / static_cast<float>(N);
@@ -124,10 +121,7 @@ Tensor grad_actor_loss(const Tensor& new_log_probs,
     bool clipped  = (ratio < 1.0f - clip_range || ratio > 1.0f + clip_range);
     if (!clipped || surr1 <= surr2) g_actor = -ratio * adv[i] * inv_N;
     
-    // Entropy term: dL_entropy/d(nlp) = −entropy_coef * dH/d(log_prob) / N
-    float g_entropy = -entropy_coef * eg[i] * inv_N;
-
-    grad[i] = g_actor + g_entropy;
+    grad[i] = g_actor;
   }
   return Tensor(grad, {N});
 }
@@ -144,11 +138,6 @@ Tensor grad_value_loss(const Tensor& returns, const Tensor& values, float value_
   for (size_t i = 0; i < N; ++i) grad[i] = value_loss_coef * (-2.0f * (ret[i] - val[i])) * inv_N;
 
   return Tensor(grad, {N});
-}
-
-Tensor entropy_grad(size_t N)
-{
-  return Tensor(std::vector<float>(N, -1.0f), {N});
 }
 
 } // namespace
@@ -245,41 +234,10 @@ void PPOAgent::train(const Tensor& next_value, const Tensor& next_is_terminal)
       clip_grad_norm(policy.get_critic(), max_grad_norm);
       critic_optimizer.step();
 
-      Tensor eg = entropy_grad(B);
-
-      Tensor grad_lp = grad_actor_loss(eval.log_probs, batch.log_probs, batch.advantages, clip_range, entropy_coef, eg);
-
-      const Tensor& logits = eval.actor_output; // [B, out_dim]
-      const Tensor& acts_eval = eval.actions_taken; // same as batch.actions
-
-      size_t out_dim = logits.shape()[1];
-      std::vector<float> grad_logits(B * out_dim, 0.0f);
-
-      const float* logit_ptr = logits.data();
-      const float* act_ptr2 = acts_eval.data();
-      const float* glp_ptr = grad_lp.data();
-
-      for (size_t b = 0; b < B; ++b)
-      {
-        const float* row = logit_ptr + b * out_dim;
-
-        // softmax of this row (numerically stable)
-        float row_max = *std::max_element(row, row + out_dim);
-        float sum_exp = 0.0f;
-        std::vector<float> sm(out_dim);
-        for (size_t c = 0; c < out_dim; ++c) { sm[c] = std::exp(row[c] - row_max); sum_exp += sm[c]; }
-        for (size_t c = 0; c < out_dim; ++c) sm[c] /= sum_exp;
-
-        int action_idx = static_cast<int>(act_ptr2[b]);
-        for (size_t c = 0; c < out_dim; ++c)
-        {
-          float indicator = (static_cast<int>(c) == action_idx) ? 1.0f : 0.0f;
-          // d(loss)/d(logit[b,c]) = grad_lp[b] * (indicator - softmax[b,c])
-          grad_logits[b * out_dim + c] = glp_ptr[b] * (indicator - sm[c]);
-        }
-      }
-
-      Tensor grad_actor_out(grad_logits, {B, out_dim});
+      Tensor grad_lp = grad_actor_loss(
+          eval.log_probs, batch.log_probs, batch.advantages, clip_range);
+      Tensor grad_actor_out = policy.actor_backward(
+          eval.actor_output, eval.actions_taken, grad_lp, entropy_coef);
 
       for (Layer* l : policy.get_actor().layers()) l->zero_grad();
       policy.get_actor().backward(grad_actor_out);
