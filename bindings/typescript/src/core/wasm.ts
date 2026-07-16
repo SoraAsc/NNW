@@ -15,6 +15,10 @@ export interface EmscriptenModuleLike {
   _nn_add_dense: (model: number, units: number, activation: number) => void;
   _nn_get_input_dim: (model: number) => number;
   _nn_get_output_dim: (model: number) => number;
+  _nn_get_parameter_count: (model: number) => number;
+  _nn_export_parameters: (model: number, out: number, count: number) => number;
+  _nn_import_parameters: (model: number, data: number, count: number) => number;
+  _nn_reset_parameters: (model: number) => void;
 
   _rl_ppo_create_agent: (...args: number[]) => number;
   _rl_ppo_free_agent: (agent: number) => void;

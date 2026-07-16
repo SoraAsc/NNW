@@ -30,6 +30,10 @@ void Model::clear_state() {
   for (Layer* layer : m_layers) layer->zero_grad();
 }
 
+void Model::reset_parameters() {
+  for (Layer* layer : m_layers) layer->reset_parameters();
+}
+
 std::vector<Layer*>& Model::layers() {
   return m_layers;
 }

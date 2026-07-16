@@ -42,6 +42,39 @@ export class NeuralNetwork {
     return this.wasm.raw._nn_get_output_dim(this.handle);
   }
 
+  /** Returns a portable copy of all trainable parameters in model order. */
+  exportParameters(): Float32Array {
+    this.assertAlive();
+    const count = this.wasm.raw._nn_get_parameter_count(this.handle);
+    const ptr = this.wasm.memory.allocOutput(count);
+    try {
+      if (!this.wasm.raw._nn_export_parameters(this.handle, ptr, count))
+        throw new Error("Failed to export neural-network parameters");
+      return new Float32Array(this.wasm.memory.readArray(ptr, count));
+    } finally {
+      this.wasm.memory.free(ptr);
+    }
+  }
+
+  /** Replaces model parameters. The target architecture must match. */
+  importParameters(parameters: Float32Array | number[]): void {
+    this.assertAlive();
+    const values = Array.from(parameters);
+    const expected = this.wasm.raw._nn_get_parameter_count(this.handle);
+    if (values.length !== expected)
+      throw new Error(`Parameter count mismatch: expected ${expected}, got ${values.length}`);
+    this.wasm.memory.withArrays([values], ([ptr]) => {
+      if (!this.wasm.raw._nn_import_parameters(this.handle, ptr, values.length))
+        throw new Error("Failed to import neural-network parameters");
+    });
+  }
+
+  /** Reinitializes all trainable parameters using each layer's initializer. */
+  resetParameters(): void {
+    this.assertAlive();
+    this.wasm.raw._nn_reset_parameters(this.handle);
+  }
+
   /** @internal raw wasm handle, used by PPOAgent when wiring actor/critic together */
   get id(): number {
     this.assertAlive();

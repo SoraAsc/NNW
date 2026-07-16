@@ -11,6 +11,7 @@ public:
   Tensor backward(const Tensor& grad_output); // Backprop through all layers in reverse order
   void update(float learning_rate); // Apply update to all layers
   void clear_state();
+  void reset_parameters();
 
   std::vector<Layer*>& layers();
 private:

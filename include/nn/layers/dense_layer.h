@@ -9,6 +9,7 @@ public:
   Tensor backward(const Tensor& grad_output) override; // compute gradients and return grad_input
   void update(float learning_rate) override; // apply update to weights and biases
   void zero_grad() override; // clear stored gradients
+  void reset_parameters() override;
   std::vector<std::pair<Tensor*, Tensor*>> get_parameters() override; // weights/biases and their gradients
   std::string info() override;
   std::string detailed_info() override;

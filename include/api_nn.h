@@ -33,6 +33,13 @@ extern "C" {
   API size_t nn_get_input_dim(const NN_Model* model);
   API size_t nn_get_output_dim(const  NN_Model* model);
 
+  // Flat model-parameter serialization. The architecture must be constructed
+  // before import; import fails when the parameter count does not match.
+  API size_t nn_get_parameter_count(const NN_Model* model);
+  API int nn_export_parameters(const NN_Model* model, float* out, size_t count);
+  API int nn_import_parameters(NN_Model* model, const float* data, size_t count);
+  API void nn_reset_parameters(NN_Model* model);
+
   API void* nn_model_get_internal(NN_Model* model);
 
   // Trainer

@@ -9,6 +9,7 @@
 #include "nn/training/trainer.h"
 
 #include <cstring>
+#include <algorithm>
 #include <vector>
 
 // Types
@@ -41,6 +42,47 @@ void nn_add_dense(NN_Model* model, size_t units, NN_Activation act) {
 
 size_t nn_get_input_dim(const NN_Model* model) { return model->input_dim; }
 size_t nn_get_output_dim(const  NN_Model* model) { return model->output_dim; }
+
+size_t nn_get_parameter_count(const NN_Model* model) {
+  if (!model) return 0;
+  size_t count = 0;
+  for (Layer* layer : const_cast<Model&>(model->impl).layers())
+    for (const auto& [parameter, gradient] : layer->get_parameters()) {
+      (void)gradient;
+      if (parameter) count += parameter->numel();
+    }
+  return count;
+}
+
+int nn_export_parameters(const NN_Model* model, float* out, size_t count) {
+  if (!model || !out || count != nn_get_parameter_count(model)) return 0;
+  size_t offset = 0;
+  for (Layer* layer : const_cast<Model&>(model->impl).layers())
+    for (const auto& [parameter, gradient] : layer->get_parameters()) {
+      (void)gradient;
+      if (!parameter) continue;
+      std::copy(parameter->data(), parameter->data() + parameter->numel(), out + offset);
+      offset += parameter->numel();
+    }
+  return 1;
+}
+
+int nn_import_parameters(NN_Model* model, const float* data, size_t count) {
+  if (!model || !data || count != nn_get_parameter_count(model)) return 0;
+  size_t offset = 0;
+  for (Layer* layer : model->impl.layers())
+    for (const auto& [parameter, gradient] : layer->get_parameters()) {
+      (void)gradient;
+      if (!parameter) continue;
+      std::copy(data + offset, data + offset + parameter->numel(), parameter->data());
+      offset += parameter->numel();
+    }
+  return 1;
+}
+
+void nn_reset_parameters(NN_Model* model) {
+  if (model) model->impl.reset_parameters();
+}
 
 void* nn_model_get_internal(NN_Model* model) { return model ? &model->impl : nullptr; }
 

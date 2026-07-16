@@ -8,12 +8,18 @@ DenseLayer::DenseLayer(size_t in_features, size_t out_features, ActivationType a
     grad_weights({out_features, in_features}), grad_biases({out_features}),
     activation_type(act_type)
 {
+  reset_parameters();
+
+  activation = create_activation(activation_type);
+}
+
+void DenseLayer::reset_parameters() {
+  const size_t in_features = weights.shape()[1];
   std::mt19937 gen(std::random_device{}());
   std::uniform_real_distribution<float> dis(-1.0f / std::sqrt((float)in_features), 1.0f / std::sqrt((float)in_features));
   for (size_t i = 0; i < weights.numel(); ++i) weights.data()[i] = dis(gen);
   for (size_t i = 0; i < biases.numel(); ++i) biases.data()[i] = 0.0f;
-
-  activation = create_activation(activation_type);
+  zero_grad();
 }
 
 DenseLayer::~DenseLayer() {} // Tensors are automatically cleaned up by their destructors

@@ -2,10 +2,17 @@ import { WasmBinding } from "./core/wasm.js";
 import { NeuralNetwork } from "./nn/index.js";
 import { PPOAgent } from "./rl/index.js";
 import type { PPOAgentConfig } from "./types/index.js";
+import {
+  loadCheckpoint,
+  resetModels,
+  saveCheckpoint,
+  type CheckpointModels,
+} from "./checkpoint/index.js";
 
 export * from "./types/index.js";
 export { NeuralNetwork } from "./nn/index.js";
 export { PPOAgent } from "./rl/index.js";
+export { loadCheckpoint, resetModels, saveCheckpoint, type CheckpointModels } from "./checkpoint/index.js";
 
 /**
  * The main handle for the library. Create models and PPO agents from here.
@@ -34,6 +41,21 @@ export class NNW {
   /** Creates a PPO agent wired to the given actor/critic models. */
   createPPOAgent(actor: NeuralNetwork, critic: NeuralNetwork, config: PPOAgentConfig): PPOAgent {
     return new PPOAgent(this.wasm, actor, critic, config);
+  }
+
+  /** Serializes a named collection of models into a versioned binary checkpoint. */
+  saveCheckpoint(models: CheckpointModels): ArrayBuffer {
+    return saveCheckpoint(models);
+  }
+
+  /** Loads a checkpoint into already constructed compatible models. */
+  loadCheckpoint(buffer: ArrayBuffer, models: CheckpointModels): void {
+    loadCheckpoint(buffer, models);
+  }
+
+  /** Reinitializes a collection of models from scratch. */
+  resetModels(models: CheckpointModels): void {
+    resetModels(models);
   }
 }
 
