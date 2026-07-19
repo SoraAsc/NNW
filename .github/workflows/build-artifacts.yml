@@ -100,7 +100,8 @@ jobs:
         run: |
           mkdir -p artifacts/webgl
           cp build-webgl/nn.js artifacts/webgl/
-          cp build-webgl/nn.wasm artifacts/webgl/ 2>/dev/null || true
+          cp build-webgl/nn.mjs artifacts/webgl/
+          cp build-webgl/nn.wasm artifacts/webgl/
 
       - name: Upload WebGL artifact
         uses: actions/upload-artifact@v7
@@ -142,18 +143,29 @@ jobs:
       - name: Copy WASM runtime
         run: |
           mkdir -p bindings/typescript/dist/libs
-          cp webgl_artifacts/* bindings/typescript/dist/libs/
+          cp webgl_artifacts/nn.mjs bindings/typescript/dist/libs/
+          cp webgl_artifacts/nn.wasm bindings/typescript/dist/libs/
+
+      - name: Verify and package TypeScript binding
+        working-directory: bindings/typescript
+        run: |
+          test -f dist/index.js
+          test -f dist/index.d.ts
+          test -f dist/libs/nn.mjs
+          test -f dist/libs/nn.wasm
+          mkdir -p ../../artifacts/typescript
+          pnpm pack --pack-destination ../../artifacts/typescript
 
       - name: Upload TS artifact
         uses: actions/upload-artifact@v7
         with:
           name: typescript
-          path: bindings/typescript/dist/*
+          path: artifacts/typescript/*.tgz
 
       - name: Upload TS to GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          files: bindings/typescript/dist/*
+          files: artifacts/typescript/*.tgz
 
   wheel:
     runs-on: ubuntu-latest
