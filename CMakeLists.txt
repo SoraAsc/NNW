@@ -52,7 +52,7 @@ if(EMSCRIPTEN)
   # 2. Modern Target (ES Module - nn.mjs)
   add_executable(nn_mjs ${LIB_SRCS})
   set_target_properties(nn_mjs PROPERTIES
-    OUTPUT_NAME "nn"
+    OUTPUT_NAME "nn_esm"
     PREFIX ""
     SUFFIX ".mjs"
   )

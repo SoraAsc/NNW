@@ -100,8 +100,9 @@ jobs:
         run: |
           mkdir -p artifacts/webgl
           cp build-webgl/nn.js artifacts/webgl/
-          cp build-webgl/nn.mjs artifacts/webgl/
           cp build-webgl/nn.wasm artifacts/webgl/
+          cp build-webgl/nn_esm.mjs artifacts/webgl/
+          cp build-webgl/nn_esm.wasm artifacts/webgl/
 
       - name: Upload WebGL artifact
         uses: actions/upload-artifact@v7
@@ -143,16 +144,16 @@ jobs:
       - name: Copy WASM runtime
         run: |
           mkdir -p bindings/typescript/dist/libs
-          cp webgl_artifacts/nn.mjs bindings/typescript/dist/libs/
-          cp webgl_artifacts/nn.wasm bindings/typescript/dist/libs/
+          cp webgl_artifacts/nn_esm.mjs bindings/typescript/dist/libs/
+          cp webgl_artifacts/nn_esm.wasm bindings/typescript/dist/libs/
 
       - name: Verify and package TypeScript binding
         working-directory: bindings/typescript
         run: |
           test -f dist/index.js
           test -f dist/index.d.ts
-          test -f dist/libs/nn.mjs
-          test -f dist/libs/nn.wasm
+          test -f dist/libs/nn_esm.mjs
+          test -f dist/libs/nn_esm.wasm
           mkdir -p ../../artifacts/typescript
           pnpm pack --pack-destination ../../artifacts/typescript
 

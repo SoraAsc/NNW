@@ -71,14 +71,15 @@ export interface EmscriptenModuleLike {
 
 type EmscriptenFactory = (options?: Record<string, unknown>) => Promise<EmscriptenModuleLike>;
 
-/** Loads the compiled wasm module (nn.mjs) relative to this package. */
+/** Loads the compiled ESM/WASM runtime relative to this package. */
 export async function loadWasmModule(): Promise<EmscriptenModuleLike> {
-  const moduleUrl = new URL("../libs/nn.mjs", import.meta.url);
+  const moduleUrl = new URL("../libs/nn_esm.mjs", import.meta.url);
+  const wasmUrl = new URL("../libs/nn_esm.wasm", import.meta.url);
   const factory = ((await import(/* @vite-ignore */ moduleUrl.href)) as { default: EmscriptenFactory })
     .default;
   return factory({
     locateFile: (name: string) => {
-      if (name.endsWith(".wasm")) return new URL("../libs/" + name, import.meta.url).href;
+      if (name.endsWith(".wasm")) return wasmUrl.href;
       return name;
     },
   });
