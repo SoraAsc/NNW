@@ -42,6 +42,23 @@ export interface EmscriptenModuleLike {
   ) => void;
   _rl_ppo_train: (agent: number, nextValue: number, batchSize: number, nextTerminal: number) => void;
 
+  _rl_create_agent: (states: number, actions: number, learningRate: number, discountFactor: number) => number;
+  _rl_free_agent: (agent: number) => void;
+  _rl_choose_agent_action: (agent: number, state: number) => number;
+  _rl_update_agent: (agent: number, state: number, action: number, reward: number, nextState: number, done: number) => void;
+  _rl_set_agent_policy: (agent: number, policy: number, epsilon: number) => void;
+  _rl_set_agent_epsilon_decay: (agent: number, start: number, min: number, rate: number, type: number, perStep: number) => number;
+  _rl_update_agent_epsilon_step: (agent: number) => void;
+  _rl_update_agent_epsilon_episode: (agent: number) => void;
+  _rl_get_agent_epsilon: (agent: number) => number;
+  _rl_set_agent_training: (agent: number, training: number) => void;
+  _rl_get_agent_training: (agent: number) => number;
+  _rl_get_agent_states: (agent: number) => number;
+  _rl_get_agent_actions: (agent: number) => number;
+  _rl_export_agent_qtable: (agent: number, out: number, count: number) => number;
+  _rl_import_agent_qtable: (agent: number, data: number, count: number) => number;
+  _rl_clear_agent_qtable: (agent: number) => void;
+
   /** Present only if nn.mjs was built with -sEXPORTED_RUNTIME_METHODS=getExceptionMessage */
   getExceptionMessage?: (excPtr: number) => string;
 

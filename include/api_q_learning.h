@@ -57,6 +57,11 @@ extern "C" {
   
   // Access internal Q-table
   RL_QTable* rl_get_agent_qtable(RL_Agent* agent);
+  size_t rl_get_agent_states(const RL_Agent* agent);
+  size_t rl_get_agent_actions(const RL_Agent* agent);
+  bool rl_export_agent_qtable(const RL_Agent* agent, float* out, size_t count);
+  bool rl_import_agent_qtable(RL_Agent* agent, const float* data, size_t count);
+  void rl_clear_agent_qtable(RL_Agent* agent);
 
   // Save / load Q-table
   // Returns true on success

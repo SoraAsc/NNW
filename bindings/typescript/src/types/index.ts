@@ -56,6 +56,23 @@ export interface PPOStepResult {
   values: number[];
 }
 
+export interface QLearningAgentConfig {
+  states: number;
+  actions: number;
+  /** @default 0.15 */
+  learningRate?: number;
+  /** @default 0.98 */
+  discountFactor?: number;
+  /** @default 1 */
+  epsilonStart?: number;
+  /** @default 0.02 */
+  epsilonMin?: number;
+  /** Exponential decay coefficient. @default 0.00002 */
+  epsilonDecay?: number;
+  /** @default "step" */
+  epsilonDecayInterval?: "step" | "episode";
+}
+
 const ACTIVATION_MAP: Record<string, Activation> = {
   linear: Activation.Linear,
   sigmoid: Activation.Sigmoid,

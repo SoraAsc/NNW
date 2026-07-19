@@ -212,6 +212,40 @@ RL_QTable* rl_get_agent_qtable(RL_Agent* agent) {
   return qtable;
 }
 
+size_t rl_get_agent_states(const RL_Agent* agent) {
+  return agent ? agent->impl->get_qtable()->get_states_num() : 0;
+}
+
+size_t rl_get_agent_actions(const RL_Agent* agent) {
+  return agent ? agent->impl->get_qtable()->get_actions_num() : 0;
+}
+
+bool rl_export_agent_qtable(const RL_Agent* agent, float* out, size_t count) {
+  if (!agent || !out) return false;
+  const auto& data = agent->impl->get_qtable()->get_data();
+  if (count != data.size()) return false;
+  std::copy(data.begin(), data.end(), out);
+  return true;
+}
+
+bool rl_import_agent_qtable(RL_Agent* agent, const float* data, size_t count) {
+  if (!agent || !data) return false;
+  QTable* table = agent->impl->get_qtable();
+  const size_t actions = table->get_actions_num();
+  if (count != table->get_states_num() * actions) return false;
+  for (size_t i = 0; i < count; ++i) table->set(i / actions, i % actions, data[i]);
+  return true;
+}
+
+void rl_clear_agent_qtable(RL_Agent* agent) {
+  if (!agent) return;
+  QTable* table = agent->impl->get_qtable();
+  for (size_t state = 0; state < table->get_states_num(); ++state)
+    for (size_t action = 0; action < table->get_actions_num(); ++action)
+      table->set(state, action, 0.0f);
+  rl_reset_agent_epsilon(agent);
+}
+
 void rl_set_agent_reward_clip(RL_Agent* agent, int enabled, float min_val, float max_val) {
   if (!agent) return;
   agent->impl->set_reward_clip(enabled != 0, min_val, max_val);

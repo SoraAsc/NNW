@@ -1,6 +1,7 @@
 import { WasmBinding } from "./core/wasm.js";
 import { NeuralNetwork } from "./nn/index.js";
 import { PPOAgent } from "./rl/index.js";
+import { QLearningAgent } from "./rl/q-learning.js";
 import type { PPOAgentConfig } from "./types/index.js";
 import {
   loadCheckpoint,
@@ -12,6 +13,7 @@ import {
 export * from "./types/index.js";
 export { NeuralNetwork } from "./nn/index.js";
 export { PPOAgent } from "./rl/index.js";
+export { QLearningAgent } from "./rl/q-learning.js";
 export { loadCheckpoint, resetModels, saveCheckpoint, type CheckpointModels } from "./checkpoint/index.js";
 
 /**
@@ -41,6 +43,11 @@ export class NNW {
   /** Creates a PPO agent wired to the given actor/critic models. */
   createPPOAgent(actor: NeuralNetwork, critic: NeuralNetwork, config: PPOAgentConfig): PPOAgent {
     return new PPOAgent(this.wasm, actor, critic, config);
+  }
+
+  /** Creates a tabular Q-learning agent. */
+  createQLearningAgent(config: import("./types/index.js").QLearningAgentConfig): QLearningAgent {
+    return new QLearningAgent(this.wasm, config);
   }
 
   /** Serializes a named collection of models into a versioned binary checkpoint. */
