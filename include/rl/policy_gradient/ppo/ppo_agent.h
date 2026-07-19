@@ -22,6 +22,7 @@ private:
 
   size_t epochs;
   size_t minibatch_size;
+  bool training = true;
 
 public:
   PPOAgent(
@@ -54,6 +55,9 @@ public:
     const Tensor& values);
 
   void train(const Tensor& next_value, const Tensor& next_is_terminal);
+
+  void set_training(bool enabled);
+  [[nodiscard]] bool is_training() const { return training; }
 
   [[nodiscard]] RolloutBuffer& get_rollout_buffer() { return rollout_buffer; }
   [[nodiscard]] const RolloutBuffer& get_rollout_buffer() const { return rollout_buffer; }

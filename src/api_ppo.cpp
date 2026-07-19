@@ -149,6 +149,14 @@ void rl_ppo_free_agent(RL_PPOAgent* agent) {
   delete agent;
 }
 
+void rl_ppo_set_training(RL_PPOAgent* agent, int training) {
+  if (agent && agent->impl) agent->impl->set_training(training != 0);
+}
+
+int rl_ppo_get_training(const RL_PPOAgent* agent) {
+  return agent && agent->impl && agent->impl->is_training() ? 1 : 0;
+}
+
 void rl_ppo_collect_step(
     RL_PPOAgent* agent,
     const float* states,

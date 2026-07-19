@@ -55,6 +55,8 @@
   "_rl_load_agent",
   "_rl_ppo_create_agent",
   "_rl_ppo_free_agent",
+  "_rl_ppo_set_training",
+  "_rl_ppo_get_training",
   "_rl_ppo_collect_step",
   "_rl_ppo_store_transition",
   "_rl_ppo_train",

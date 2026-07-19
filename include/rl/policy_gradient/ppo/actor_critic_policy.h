@@ -31,7 +31,7 @@ public:
       size_t actor_output_dim);
   ~ActorCriticPolicy() = default;
 
-  [[nodiscard]] StepOutput act(const Tensor& states) const;
+  [[nodiscard]] StepOutput act(const Tensor& states, bool deterministic = false) const;
   [[nodiscard]] EvaluationOutput evaluate(const Tensor& states, const Tensor& actions) const;
   [[nodiscard]] Tensor actor_backward(
       const Tensor& actor_output,

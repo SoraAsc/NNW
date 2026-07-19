@@ -30,10 +30,10 @@ ActorCriticPolicy::ActorCriticPolicy(
   (void)distribution->action_dim(actor_output_size);
 }
 
-StepOutput ActorCriticPolicy::act(const Tensor& states) const {
+StepOutput ActorCriticPolicy::act(const Tensor& states, bool deterministic) const {
   size_t batch = states.shape()[0];
   Tensor actor_output = actor_net.forward(states);
-  Tensor actions = distribution->sample(actor_output);
+  Tensor actions = distribution->sample(actor_output, deterministic);
   DistributionEvaluation evaluation = distribution->evaluate(actor_output, actions);
   return {
       std::move(actions),

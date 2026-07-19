@@ -18,7 +18,8 @@ public:
   virtual ~ActionDistribution() = default;
 
   [[nodiscard]] virtual size_t action_dim(size_t actor_output_dim) const = 0;
-  [[nodiscard]] virtual Tensor sample(const Tensor& actor_output) const = 0;
+  [[nodiscard]] virtual Tensor sample(
+      const Tensor& actor_output, bool deterministic = false) const = 0;
   [[nodiscard]] virtual DistributionEvaluation evaluate(
       const Tensor& actor_output, const Tensor& actions) const = 0;
 

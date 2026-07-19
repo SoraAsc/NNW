@@ -152,6 +152,20 @@ export class PPOAgent {
     });
   }
 
+  /**
+   * Training mode samples from the policy and allows rollout updates.
+   * Test mode is deterministic and makes storeTransition/train no-ops.
+   */
+  get training(): boolean {
+    this.assertAlive();
+    return this.wasm.raw._rl_ppo_get_training(this.handle) !== 0;
+  }
+
+  set training(enabled: boolean) {
+    this.assertAlive();
+    this.wasm.raw._rl_ppo_set_training(this.handle, enabled ? 1 : 0);
+  }
+
   /** Stores one rollout step's transitions in the agent's buffer. */
   storeTransition(
     states: number[],

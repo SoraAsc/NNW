@@ -178,7 +178,7 @@ PPOAgent::PPOAgent(
 
 StepOutput PPOAgent::collect_step(const Tensor& states) const
 {
-  return policy.act(states);
+  return policy.act(states, !training);
 }
 
 void PPOAgent::store_transition(const Tensor& states,
@@ -188,11 +188,13 @@ void PPOAgent::store_transition(const Tensor& states,
                                  const Tensor& is_terminals,
                                  const Tensor& values)
 {
+  if (!training) return;
   rollout_buffer.insert(states, actions, log_probs, rewards, is_terminals, values);
 }
 
 void PPOAgent::train(const Tensor& next_value, const Tensor& next_is_terminal)
 {
+  if (!training) return;
   if (rollout_buffer.size() == 0) throw std::runtime_error("PPOAgent::train called with empty rollout buffer");
 
   // 1. Compute returns and advantages (GAE)
@@ -247,5 +249,14 @@ void PPOAgent::train(const Tensor& next_value, const Tensor& next_is_terminal)
   }
 
   // 3. Clear buffer for the next rollout
+  rollout_buffer.clear();
+}
+
+void PPOAgent::set_training(bool enabled)
+{
+  if (training == enabled) return;
+  training = enabled;
+  // Stored log-probabilities belong to the previous mode/policy interaction.
+  // Never carry a partial training rollout across an evaluation interval.
   rollout_buffer.clear();
 }

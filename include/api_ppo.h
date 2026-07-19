@@ -44,6 +44,8 @@ extern "C" {
     size_t minibatch_size);
 
   API void rl_ppo_free_agent(RL_PPOAgent* agent);
+  API void rl_ppo_set_training(RL_PPOAgent* agent, int training);
+  API int rl_ppo_get_training(const RL_PPOAgent* agent);
 
   API void rl_ppo_collect_step(
     RL_PPOAgent* agent,

@@ -58,12 +58,16 @@ class CategoricalDistribution final : public ActionDistribution {
 public:
   size_t action_dim(size_t) const override { return 1; }
 
-  Tensor sample(const Tensor& output) const override {
+  Tensor sample(const Tensor& output, bool deterministic) const override {
     require_matrix(output, "categorical actor output");
     size_t B = output.shape()[0], C = output.shape()[1];
     std::vector<float> actions(B);
-    for (size_t b = 0; b < B; ++b)
-      actions[b] = static_cast<float>(categorical_sample(output.data() + b * C, C));
+    for (size_t b = 0; b < B; ++b) {
+      const float* row = output.data() + b * C;
+      actions[b] = static_cast<float>(deterministic
+          ? static_cast<size_t>(std::max_element(row, row + C) - row)
+          : categorical_sample(row, C));
+    }
     return Tensor(actions, {B, 1});
   }
 
@@ -108,14 +112,15 @@ public:
     return log_std.numel();
   }
 
-  Tensor sample(const Tensor& output) const override {
+  Tensor sample(const Tensor& output, bool deterministic) const override {
     require_matrix(output, "Gaussian actor output");
     size_t B = output.shape()[0], D = output.shape()[1];
     action_dim(D);
     std::vector<float> actions(B * D);
     for (size_t b = 0; b < B; ++b)
       for (size_t d = 0; d < D; ++d)
-        actions[b * D + d] = std::tanh(output.data()[b * D + d] + std::exp(log_std.data()[d]) * standard_normal());
+        actions[b * D + d] = std::tanh(output.data()[b * D + d]
+            + (deterministic ? 0.0f : std::exp(log_std.data()[d]) * standard_normal()));
     return Tensor(actions, {B, D});
   }
 
@@ -155,12 +160,12 @@ class BernoulliDistribution final : public ActionDistribution {
 public:
   size_t action_dim(size_t actor_output_dim) const override { return actor_output_dim; }
 
-  Tensor sample(const Tensor& output) const override {
+  Tensor sample(const Tensor& output, bool deterministic) const override {
     size_t B = output.shape()[0], D = output.shape()[1];
     std::vector<float> actions(B * D);
     for (size_t i = 0; i < actions.size(); ++i) {
       float p = 1.0f / (1.0f + std::exp(-output.data()[i]));
-      actions[i] = uniform01() < p ? 1.0f : 0.0f;
+      actions[i] = deterministic ? (p >= 0.5f ? 1.0f : 0.0f) : (uniform01() < p ? 1.0f : 0.0f);
     }
     return Tensor(actions, {B, D});
   }
@@ -207,13 +212,17 @@ public:
     return sizes.size();
   }
 
-  Tensor sample(const Tensor& output) const override {
+  Tensor sample(const Tensor& output, bool deterministic) const override {
     size_t B = output.shape()[0], C = output.shape()[1], A = action_dim(C);
     std::vector<float> actions(B * A);
     size_t offset = 0;
     for (size_t a = 0; a < A; ++a) {
-      for (size_t b = 0; b < B; ++b)
-        actions[b * A + a] = static_cast<float>(categorical_sample(output.data() + b * C + offset, sizes[a]));
+      for (size_t b = 0; b < B; ++b) {
+        const float* row = output.data() + b * C + offset;
+        actions[b * A + a] = static_cast<float>(deterministic
+            ? static_cast<size_t>(std::max_element(row, row + sizes[a]) - row)
+            : categorical_sample(row, sizes[a]));
+      }
       offset += sizes[a];
     }
     return Tensor(actions, {B, A});

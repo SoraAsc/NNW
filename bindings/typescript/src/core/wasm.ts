@@ -22,6 +22,8 @@ export interface EmscriptenModuleLike {
 
   _rl_ppo_create_agent: (...args: number[]) => number;
   _rl_ppo_free_agent: (agent: number) => void;
+  _rl_ppo_set_training: (agent: number, training: number) => void;
+  _rl_ppo_get_training: (agent: number) => number;
   _rl_ppo_collect_step: (
     agent: number,
     states: number,
