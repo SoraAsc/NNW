@@ -1,6 +1,15 @@
 import type { WasmBinding } from "../core/wasm.js";
 import { type ActivationLike, resolveActivation } from "../types/index.js";
 
+export type TrainerOptimizer = "sgd" | "adamw";
+
+export interface TrainerConfig {
+  optimizer?: TrainerOptimizer;
+  batchSize?: number;
+  shuffle?: boolean;
+  learningRate?: number;
+}
+
 /**
  * A feed-forward network living in wasm memory.
  *
@@ -75,6 +84,34 @@ export class NeuralNetwork {
     this.wasm.raw._nn_reset_parameters(this.handle);
   }
 
+  /** Runs batched inference and returns a flat sample-major output array. */
+  predict(inputs: number[] | Float32Array): Float32Array {
+    this.assertAlive();
+    const values = Array.from(inputs);
+    if (values.length % this.inputDim !== 0)
+      throw new Error(`Input length must be a multiple of ${this.inputDim}`);
+    const sampleCount = values.length / this.inputDim;
+    const outputLength = sampleCount * this.outputDim;
+    const out = this.wasm.memory.allocOutput(outputLength);
+    try {
+      this.wasm.memory.withArrays([values], ([input]) =>
+        this.wasm.call(() =>
+          this.wasm.raw._nn_predict(
+            this.handle,
+            input,
+            sampleCount,
+            this.inputDim,
+            out,
+            this.outputDim,
+          ),
+        ),
+      );
+      return new Float32Array(this.wasm.memory.readArray(out, outputLength));
+    } finally {
+      this.wasm.memory.free(out);
+    }
+  }
+
   /** @internal raw wasm handle, used by PPOAgent when wiring actor/critic together */
   get id(): number {
     this.assertAlive();
@@ -90,5 +127,64 @@ export class NeuralNetwork {
 
   private assertAlive(): void {
     if (this.disposed) throw new Error("NeuralNetwork used after dispose()");
+  }
+}
+
+
+/** Supervised MSE trainer for a neural network living in wasm memory. */
+export class NeuralNetworkTrainer {
+  private handle: number;
+  private disposed = false;
+
+  constructor(
+    private readonly wasm: WasmBinding,
+    private readonly model: NeuralNetwork,
+    config: TrainerConfig = {},
+  ) {
+    const ptr = wasm.memory.allocUint32(4);
+    try {
+      // NN_TrainerConfig: size_t epochs, size_t batch_size, int shuffle, float learning_rate.
+      wasm.memory.writeUint32(ptr, [1, config.batchSize ?? 4, config.shuffle === false ? 0 : 1]);
+      wasm.memory.writeFloat32(ptr, 12, config.learningRate ?? 1e-3);
+      this.handle = wasm.call(() =>
+        wasm.raw._nn_create_trainer(model.id, config.optimizer === "adamw" ? 1 : 0, 0, ptr),
+      );
+    } finally {
+      wasm.memory.free(ptr);
+    }
+  }
+
+  /** Trains one epoch and returns the average MSE loss. */
+  train(inputs: number[] | Float32Array, targets: number[] | Float32Array): number {
+    this.assertAlive();
+    const x = Array.from(inputs);
+    const y = Array.from(targets);
+    if (x.length % this.model.inputDim !== 0)
+      throw new Error(`Input length must be a multiple of ${this.model.inputDim}`);
+    const sampleCount = x.length / this.model.inputDim;
+    if (y.length !== sampleCount * this.model.outputDim)
+      throw new Error(`Expected ${sampleCount * this.model.outputDim} target values, got ${y.length}`);
+    return this.wasm.memory.withArrays([x, y], ([xPtr, yPtr]) =>
+      this.wasm.call(() =>
+        this.wasm.raw._nn_train_fit(
+          this.handle,
+          xPtr,
+          sampleCount,
+          this.model.inputDim,
+          yPtr,
+          this.model.outputDim,
+        ),
+      ),
+    );
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.wasm.raw._nn_free_trainer(this.handle);
+    this.disposed = true;
+  }
+
+  private assertAlive(): void {
+    if (this.disposed) throw new Error("NeuralNetworkTrainer used after dispose()");
   }
 }

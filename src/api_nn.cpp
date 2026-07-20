@@ -122,7 +122,7 @@ static Tensor make_tensor_from_row(const float* base, size_t stride_elems, size_
   return t;
 }
 
-void nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t x_dim, const float* y, size_t y_dim) {
+float nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t x_dim, const float* y, size_t y_dim) {
   std::vector<Tensor> vin; vin.reserve(n_samples);
   std::vector<Tensor> vtar; vtar.reserve(n_samples);
 
@@ -131,7 +131,7 @@ void nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t 
     vtar.emplace_back(make_tensor_from_row(y, y_dim, i, y_dim));
   }
 
-  trainer->impl->train(vin, vtar);
+  return trainer->impl->train_epoch(vin, vtar);
 }
 
 void nn_predict(const NN_Model* model, const float* x, size_t n_samples, size_t x_dim, float* out, size_t y_dim) {

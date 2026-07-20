@@ -47,32 +47,36 @@ float Trainer::train_batch(const std::vector<Tensor>& batch_inputs, const std::v
 }
 
 void Trainer::train(const std::vector<Tensor>& inputs, const std::vector<Tensor>& targets) {
+  for (size_t epoch = 0; epoch < m_config.epochs; ++epoch) {
+    float epoch_loss = train_epoch(inputs, targets);
+    std::cout << "Epoch " << (epoch + 1) << "/" << m_config.epochs << ", Loss: " << epoch_loss << std::endl;
+  }
+}
+
+float Trainer::train_epoch(const std::vector<Tensor>& inputs, const std::vector<Tensor>& targets) {
   if (inputs.size() != targets.size()) throw std::invalid_argument("Mismatched input and target sizes");
+  if (inputs.empty()) throw std::invalid_argument("Training dataset cannot be empty");
   size_t dataset_size = inputs.size();
-  size_t batch_size = m_config.batch_size;
+  size_t batch_size = std::max<size_t>(1, m_config.batch_size);
   size_t num_batches = (dataset_size + batch_size - 1) / batch_size;
 
   std::vector<size_t> indices(dataset_size);
   for (size_t i = 0; i < dataset_size; ++i) indices[i] = i;
 
-  for (size_t epoch = 0; epoch < m_config.epochs; ++epoch) {
-    if (m_config.shuffle) std::shuffle(indices.begin(), indices.end(), m_rng);
+  if (m_config.shuffle) std::shuffle(indices.begin(), indices.end(), m_rng);
 
-    float epoch_loss = 0.0f;
-    for (size_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
-      size_t start = batch_idx * batch_size;
-      size_t end = std::min(start + batch_size, dataset_size);
+  float epoch_loss = 0.0f;
+  for (size_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
+    size_t start = batch_idx * batch_size;
+    size_t end = std::min(start + batch_size, dataset_size);
 
-      std::vector<Tensor> batch_inputs, batch_targets;
-      for (size_t i = start; i < end; ++i) {
-        batch_inputs.push_back(inputs[indices[i]]);
-        batch_targets.push_back(targets[indices[i]]);
-      }
-
-      float batch_loss = train_batch(batch_inputs, batch_targets);
-      epoch_loss += batch_loss;
+    std::vector<Tensor> batch_inputs, batch_targets;
+    for (size_t i = start; i < end; ++i) {
+      batch_inputs.push_back(inputs[indices[i]]);
+      batch_targets.push_back(targets[indices[i]]);
     }
-    epoch_loss /= num_batches;
-    std::cout << "Epoch " << (epoch + 1) << "/" << m_config.epochs << ", Loss: " << epoch_loss << std::endl;
+
+    epoch_loss += train_batch(batch_inputs, batch_targets);
   }
+  return epoch_loss / static_cast<float>(num_batches);
 }

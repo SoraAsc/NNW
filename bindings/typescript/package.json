@@ -1,6 +1,6 @@
 {
   "name": "nnw",
-  "version": "0.4.0",
+  "version": "0.5.2",
   "description": "TypeScript bindings for NNW neural network library",
   "type": "module",
   "main": "dist/index.js",
@@ -16,8 +16,8 @@
     }
   },
   "scripts": {
-    "prepare:dev": "mkdir -p src/libs && cp ../../build-wasm/nn.* src/libs/",
-    "prepare:dist": "mkdir -p dist/libs && cp ../../build-wasm/nn.* dist/libs/",
+    "prepare:dev": "mkdir -p src/libs && cp ../../build-wasm/nn_esm.mjs ../../build-wasm/nn_esm.wasm src/libs/",
+    "prepare:dist": "mkdir -p dist/libs && cp ../../build-wasm/nn_esm.mjs ../../build-wasm/nn_esm.wasm dist/libs/",
     "build": "tsc",
     "build:full": "pnpm build && pnpm prepare:dist",
     "example": "pnpm prepare:dev && tsx examples/basic.ts"

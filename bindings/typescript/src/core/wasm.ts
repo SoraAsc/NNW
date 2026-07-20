@@ -19,6 +19,29 @@ export interface EmscriptenModuleLike {
   _nn_export_parameters: (model: number, out: number, count: number) => number;
   _nn_import_parameters: (model: number, data: number, count: number) => number;
   _nn_reset_parameters: (model: number) => void;
+  _nn_create_trainer: (
+    model: number,
+    optimizer: number,
+    loss: number,
+    config: number,
+  ) => number;
+  _nn_free_trainer: (trainer: number) => void;
+  _nn_train_fit: (
+    trainer: number,
+    x: number,
+    sampleCount: number,
+    inputDim: number,
+    y: number,
+    outputDim: number,
+  ) => number;
+  _nn_predict: (
+    model: number,
+    x: number,
+    sampleCount: number,
+    inputDim: number,
+    out: number,
+    outputDim: number,
+  ) => void;
 
   _rl_ppo_create_agent: (...args: number[]) => number;
   _rl_ppo_free_agent: (agent: number) => void;
@@ -107,6 +130,19 @@ export class WasmMemory {
     const ptr = this.mod._malloc(bytes);
     new Uint32Array(this.mod.HEAPU32.buffer, ptr, values.length).set(values);
     return ptr;
+  }
+
+  /** Allocates an unsigned 32-bit buffer for a small C struct. */
+  allocUint32(length: number): number {
+    return this.mod._malloc(length * Uint32Array.BYTES_PER_ELEMENT);
+  }
+
+  writeUint32(ptr: number, values: number[]): void {
+    new Uint32Array(this.mod.HEAPU32.buffer, ptr, values.length).set(values);
+  }
+
+  writeFloat32(ptr: number, byteOffset: number, value: number): void {
+    new DataView(this.mod.HEAPU8.buffer).setFloat32(ptr + byteOffset, value, true);
   }
 
   /** Allocates an uninitialized Float32 output buffer of `length` elements. */

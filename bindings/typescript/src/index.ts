@@ -1,5 +1,5 @@
 import { WasmBinding } from "./core/wasm.js";
-import { NeuralNetwork } from "./nn/index.js";
+import { NeuralNetwork, NeuralNetworkTrainer, type TrainerConfig } from "./nn/index.js";
 import { PPOAgent } from "./rl/index.js";
 import { QLearningAgent } from "./rl/q-learning.js";
 import type { PPOAgentConfig } from "./types/index.js";
@@ -11,7 +11,7 @@ import {
 } from "./checkpoint/index.js";
 
 export * from "./types/index.js";
-export { NeuralNetwork } from "./nn/index.js";
+export { NeuralNetwork, NeuralNetworkTrainer, type TrainerConfig } from "./nn/index.js";
 export { PPOAgent } from "./rl/index.js";
 export { QLearningAgent } from "./rl/q-learning.js";
 export { loadCheckpoint, resetModels, saveCheckpoint, type CheckpointModels } from "./checkpoint/index.js";
@@ -38,6 +38,11 @@ export class NNW {
   /** Creates a new empty model with the given input dimension. Add layers with `.addDense(...)`. */
   createModel(inputDim: number): NeuralNetwork {
     return new NeuralNetwork(this.wasm, inputDim);
+  }
+
+  /** Creates an MSE trainer for supervised learning. */
+  createTrainer(model: NeuralNetwork, config: TrainerConfig = {}): NeuralNetworkTrainer {
+    return new NeuralNetworkTrainer(this.wasm, model, config);
   }
 
   /** Creates a PPO agent wired to the given actor/critic models. */
