@@ -14,7 +14,16 @@
 
 // Types
 struct NN_Model { Model impl; size_t input_dim = 0; size_t output_dim = 0; };
-struct NN_Trainer { Trainer* impl = nullptr; ~NN_Trainer() { delete impl; } };
+struct NN_Trainer {
+  Trainer* impl = nullptr;
+  Loss* loss = nullptr;
+  Optimizer* optimizer = nullptr;
+  ~NN_Trainer() {
+    delete impl;
+    delete optimizer;
+    delete loss;
+  }
+};
 
 // Model
 NN_Model* nn_create_model(size_t input_dim) {
@@ -109,6 +118,8 @@ NN_Trainer* nn_create_trainer(NN_Model* model, NN_Optimizer opt, NN_Loss loss, c
   }
 
   NN_Trainer* trainer = new NN_Trainer();
+  trainer->loss = lossfn;
+  trainer->optimizer = optimizer;
   trainer->impl = new Trainer(&model->impl, lossfn, optimizer, tcfg);
   return trainer;
 }
@@ -131,7 +142,7 @@ float nn_train_fit(NN_Trainer* trainer, const float* x, size_t n_samples, size_t
     vtar.emplace_back(make_tensor_from_row(y, y_dim, i, y_dim));
   }
 
-  return trainer->impl->train_epoch(vin, vtar);
+  return trainer->impl->train_epochs(vin, vtar);
 }
 
 void nn_predict(const NN_Model* model, const float* x, size_t n_samples, size_t x_dim, float* out, size_t y_dim) {

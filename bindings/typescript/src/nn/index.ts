@@ -22,8 +22,8 @@ export interface TrainerConfig {
  *   .addDense(2, "linear");
  * ```
  *
- * Call `.dispose()` when you're done with it (PPOAgent disposes its
- * actor/critic models automatically when you dispose the agent).
+ * Call `.dispose()` when you're done with it. Agents that reference a model
+ * do not take ownership of it.
  */
 export class NeuralNetwork {
   private handle: number;
@@ -37,6 +37,8 @@ export class NeuralNetwork {
   /** Appends a dense layer. Returns `this` so calls can be chained. */
   addDense(units: number, activation: ActivationLike = "linear"): this {
     this.assertAlive();
+    if (!Number.isInteger(units) || units <= 0)
+      throw new Error(`Dense layer units must be a positive integer, got ${units}`);
     this.wasm.raw._nn_add_dense(this.handle, units, resolveActivation(activation));
     return this;
   }
@@ -87,7 +89,9 @@ export class NeuralNetwork {
   /** Runs batched inference and returns a flat sample-major output array. */
   predict(inputs: number[] | Float32Array): Float32Array {
     this.assertAlive();
+    if (this.outputDim === 0) throw new Error("Cannot run prediction before adding an output layer");
     const values = Array.from(inputs);
+    if (values.length === 0) return new Float32Array();
     if (values.length % this.inputDim !== 0)
       throw new Error(`Input length must be a multiple of ${this.inputDim}`);
     const sampleCount = values.length / this.inputDim;
@@ -130,7 +134,6 @@ export class NeuralNetwork {
   }
 }
 
-
 /** Supervised MSE trainer for a neural network living in wasm memory. */
 export class NeuralNetworkTrainer {
   private handle: number;
@@ -141,11 +144,18 @@ export class NeuralNetworkTrainer {
     private readonly model: NeuralNetwork,
     config: TrainerConfig = {},
   ) {
+    if (model.outputDim === 0) throw new Error("Cannot create a trainer for a model without layers");
+    const batchSize = config.batchSize ?? 4;
+    const learningRate = config.learningRate ?? 1e-3;
+    if (!Number.isInteger(batchSize) || batchSize <= 0)
+      throw new Error(`batchSize must be a positive integer, got ${batchSize}`);
+    if (!Number.isFinite(learningRate) || learningRate <= 0)
+      throw new Error(`learningRate must be positive, got ${learningRate}`);
     const ptr = wasm.memory.allocUint32(4);
     try {
       // NN_TrainerConfig: size_t epochs, size_t batch_size, int shuffle, float learning_rate.
-      wasm.memory.writeUint32(ptr, [1, config.batchSize ?? 4, config.shuffle === false ? 0 : 1]);
-      wasm.memory.writeFloat32(ptr, 12, config.learningRate ?? 1e-3);
+      wasm.memory.writeUint32(ptr, [1, batchSize, config.shuffle === false ? 0 : 1]);
+      wasm.memory.writeFloat32(ptr, 12, learningRate);
       this.handle = wasm.call(() =>
         wasm.raw._nn_create_trainer(model.id, config.optimizer === "adamw" ? 1 : 0, 0, ptr),
       );
@@ -159,6 +169,7 @@ export class NeuralNetworkTrainer {
     this.assertAlive();
     const x = Array.from(inputs);
     const y = Array.from(targets);
+    if (x.length === 0) throw new Error("Training inputs cannot be empty");
     if (x.length % this.model.inputDim !== 0)
       throw new Error(`Input length must be a multiple of ${this.model.inputDim}`);
     const sampleCount = x.length / this.model.inputDim;

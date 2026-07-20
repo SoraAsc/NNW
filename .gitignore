@@ -1,6 +1,7 @@
 # Build dirs
 /build/
 /build-wasm/
+/emsdk/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake

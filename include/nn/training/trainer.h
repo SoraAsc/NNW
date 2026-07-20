@@ -18,7 +18,10 @@ public:
   // Vectors of samples (each sample is a Tensor). They must be of the same length.
   void train(const std::vector<Tensor>& inputs, const std::vector<Tensor>& targets);
 
-  // Train for one configured epoch and return its average loss.
+  // Train for the configured number of epochs and return the final epoch loss.
+  float train_epochs(const std::vector<Tensor>& inputs, const std::vector<Tensor>& targets);
+
+  // Train for one epoch and return its average loss.
   float train_epoch(const std::vector<Tensor>& inputs, const std::vector<Tensor>& targets);
 
   // Train on a single batch, return the average loss for the batch

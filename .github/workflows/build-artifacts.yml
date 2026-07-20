@@ -138,7 +138,7 @@ jobs:
       - name: Build TypeScript
         working-directory: bindings/typescript
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run build
 
       - name: Copy WASM runtime
