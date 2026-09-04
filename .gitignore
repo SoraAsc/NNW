@@ -29,6 +29,11 @@ __pycache__/
 .venv/
 env/
 
+# Artefatos gerados pelo empacotamento Python
+bindings/python/build/
+bindings/python/dist/
+bindings/python/*.egg-info/
+
 # C# / Unity
 bin/
 obj/
